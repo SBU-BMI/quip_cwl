@@ -5,20 +5,28 @@ var fs      = require('fs');
 var workflows = require('./config/cwl_workflows.json');
 const exec    = require('child_process').exec; 
 
-var jobs = kue.createQueue();
+var jobs = kue.createQueue({
+	prefix: 'q',
+  	redis: {
+    		port: 6379,
+    		host: 'quip-jobs'
+	}
+});
 
-jobs.process('test', function(job,done) {
+jobs.process('order', function(job,done) {
 	console.log(job.data);
 	var workflow = workflows.filter(function(el) {
-						return el.name === job.data.name;
+                console.log(el);
+		return el.name === job.data.name;
 	});
+        console.log(workflow);
 	if (workflow.length==0) {
 		done(new Error("Unrecognized workflow: " + job.data.name));
 	} else {
 		console.log(workflow);
 		var randval = Math.floor(Math.random()*100000);
 		var tmpdir  = './tmpdir'+randval;
-	    fs.mkdirSync(tmpdir);
+	        fs.mkdirSync(tmpdir);
 		var jobfile = tmpdir + '/workflow-job.json';
 		fs.writeFile(jobfile,JSON.stringify(job.data.workflow), function(err) {
 			if (err) {
@@ -36,7 +44,8 @@ jobs.process('test', function(job,done) {
 				console.error(error);
 				done(new Error("Execution error: " + error));
 			}
-		    done(null,stdout);
+			console.log(stdout);
+		        done(null,stdout);
 		});
 	}
 });
