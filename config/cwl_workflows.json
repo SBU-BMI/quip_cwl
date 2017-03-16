@@ -1,0 +1,7 @@
+[
+{
+	"name" : "segmentation",
+	"path" : "workflows/segmentation",
+	"file" : "segment-workflow.json"
+}
+]
