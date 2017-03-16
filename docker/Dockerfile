@@ -15,4 +15,6 @@ RUN git clone https://github.com/SBU-BMI/quip_cwl.git && \
  
 ENV PATH=$PATH:/root/quip_cwl/bin
 
+WORKDIR /root/quip_cwl
+
 CMD ["node","worker_cwl.js"]
