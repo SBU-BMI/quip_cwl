@@ -2,6 +2,6 @@
 {
 	"name" : "segmentation",
 	"path" : "workflows/segmentation",
-	"file" : "segment-workflow.json"
+	"file" : "segment-workflow.cwl"
 }
 ]
