@@ -13,7 +13,7 @@ var jobs = kue.createQueue({
 	}
 });
 
-jobs.process('order', function(job,done) {
+jobs.process('quip_cwl', function(job,done) {
 	console.log(job.data);
 	var workflow = workflows.filter(function(el) {
                 console.log(el);
