@@ -11,8 +11,8 @@ RUN npm install -g forever && \
 WORKDIR /root
 
 RUN git clone https://github.com/SBU-BMI/quip_cwl.git && \
-    cd quip_cwl; && \
-    npm install;
+    cd quip_cwl && \
+    npm install
  
 ENV PATH=$PATH:/root/quip_cwl/bin
 
