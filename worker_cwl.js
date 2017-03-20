@@ -65,8 +65,8 @@ jobs.process('order', function(job,done) {
                 job_def.image_wsi = job.data.order.image.case_id;
                 job_def.locx = parseInt(job.data.order.roi.x);
                 job_def.locy = parseInt(job.data.order.roi.y);
-                job_def.width = parseInt(job.data.order.roi.h);
-                job_def.height = parseInt(job.data.order.roi.w);
+                job_def.width = parseInt(job.data.order.roi.w);
+                job_def.height = parseInt(job.data.order.roi.h);
                 job_def.output_dir = "./";
                 job_def.analysis_id = job.data.order.execution.execution_id;
 		job_def.case_id = job.data.order.image.case_id;
@@ -81,7 +81,7 @@ jobs.process('order', function(job,done) {
                 job_def.declump = job.data.order.pj;
 		job_def.mpp = 0.25;
                 job_def.upper_left_corner = job.data.order.roi.x + "," + job.data.order.roi.y;
-                job_def.tile_size = job.data.order.roi.h + "," + job.data.order.roi.w;
+                job_def.tile_size = job.data.order.roi.w + "," + job.data.order.roi.h;
                 job_def.patch_size = job_def.tile_size;
 		job_def.zip_output = "output.zip";
                 job_def.out_folder = "./temp";
