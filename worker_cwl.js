@@ -4,6 +4,7 @@ var sleep   = require('sleep');
 var fs      = require('fs');
 var workflows = require('./config/cwl_workflows.json');
 const exec    = require('child_process').exec; 
+var request = require('superagent');
 
 var jobs = kue.createQueue({
 	prefix: 'q',
@@ -49,6 +50,76 @@ jobs.process('quip_cwl', function(job,done) {
 		});
 	}
 });
+
+jobs.process('wsi_segment', function(job,done) {
+	console.log(job.data);
+        var wsi = job.data.wsi;
+
+        // get metadata about image
+        request.get('http://quip-data:9099/services/Camicroscope_DataLoader/DataLoader/query/getMetaDataForCaseID')
+		.query('case_id='+wsi.case_id)
+		.end(function(err,res) {
+			console.log('RESULT: ' + JSON.stringify(res));
+			var wsi_info = JSON.parse(res.text)[0];
+			console.log("Width: " + wsi_info.width);
+			console.log("Height: " + wsi_info.height);
+			console.log("MPP: " + wsi_info['mpp-x']);
+
+			var tile_size = 4096;
+			for (i=0;i<wsi_info.width;i+=tile_size) {
+				for (j=0;j<wsi_info.height;j+=tile_size) {
+					var seg_params = {};
+					seg_params.locx = i;
+					seg_params.locy = j;
+					seg_params.width = tile_size; 
+					if ((seg_params.locx+seg_params.width)>wsi_info.width) {
+						seg_params.width = wsi_info.width-(seg_params.locx+1);
+					}
+					seg_params.height = tile_size;
+					if ((seg_params.locy+seg_params.height)>wsi_info.height) {
+						seg_params.height = wsi_info.height-(seg_params.locy+1);
+					}
+					seg_params.otsu_ratio = 1.0;
+					seg_params.curv_weight = 0.8;
+					seg_params.lower_size  = 3.0;
+					seg_params.upper_size  = 200.0;
+					seg_params.kernel_size = 10;
+					seg_params.mpp = parseFloat(wsi_info['mpp-x']);
+					seg_params.declump = 'N';
+					seg_params.upper_left_corner = seg_params.locx + ',' + seg_params.locy;
+					seg_params.tile_size = seg_params.width + ',' + seg_params.height;
+					seg_params.patch_size = seg_params.width + ',' + seg_params.height;
+					seg_params.zip_output = "output.zip";
+					seg_params.out_folder = "./temp";
+					seg_params.output_dir = "./";
+					seg_params.analysis_id = "test:111";
+					seg_params.case_id = wsi.case_id;
+					seg_params.image_wsi = wsi.case_id;
+					seg_params.subject_id = wsi.case_id;
+					
+					console.log("SEG PARAMS: " + JSON.stringify(seg_params));
+
+
+					var segment_job = {};
+					segment_job.type = "quip_cwl";
+					segment_job.data = {};
+					segment_job.data.name = "segmentation";
+					segment_job.data.workflow = seg_params;
+
+					request.post('http://quip-jobs:3000/job')
+						.send(segment_job)
+						.set("Content-Type","application/json")
+						.end(function(err,res) {
+							console.log("RESULT: " + JSON.stringify(res));
+						});
+					
+				}
+			}
+
+		});
+});
+
+
 
 jobs.process('order', function(job,done) {
 	console.log(job.data);
