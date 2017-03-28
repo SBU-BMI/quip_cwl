@@ -11,7 +11,7 @@ var config    = require('./config/config.json');
 
 var redis_host = process.env.REDIS_HOST || config.redis.host;
 var redis_port = process.env.REDIS_PORT || config.redis.port;
-var numCores   = require('os').cpus().length;
+var numCores   = process.env.NUM_CORES || require('os').cpus().length;
 
 var jobs = kue.createQueue({
 	prefix: 'q',
