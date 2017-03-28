@@ -1,62 +1,78 @@
-var kue     = require('kue');
-var express = require('express');
-var sleep   = require('sleep');
-var fs      = require('fs');
-var workflows = require('./config/cwl_workflows.json');
+var kue       = require('kue');
+var express   = require('express');
+var sleep     = require('sleep');
+var fs        = require('fs');
+var cluster   = require('cluster');
 const exec    = require('child_process').exec; 
-var request = require('superagent');
+var request   = require('superagent');
+var workflows = require('./config/cwl_workflows.json');
+var config    = require('./config/config.js');
+
+var redis_host = process.env.REDIS_HOST || config.redis.host;
+var redis_port = process.env.REDIS_PORT || config.redis.port;
+
+var numCores = require('os').cpus().length;
 
 var jobs = kue.createQueue({
 	prefix: 'q',
-  	redis: {
-    		port: 6379,
-    		host: 'quip-jobs'
+	redis: {
+		port: redis_port,
+		host: redis_host
 	}
 });
 
-jobs.process('quip_cwl', function(job,done) {
-	console.log(job.data);
-	var workflow = workflows.filter(function(el) {
-                console.log(el);
-		return el.name === job.data.name;
+if (cluster.isMaster) {
+	for (var i = 0; i < numCoress; i++) 
+		cluster.fork();
+
+	cluster.on('exit', function(worker, code, signal) {
+		console.log('worker ${worker.process.pid} died');
 	});
-        console.log(workflow);
-	if (workflow.length==0) {
-		done(new Error("Unrecognized workflow: " + job.data.name));
-	} else {
+} else {
+	console.log('Worker ${process.pid} started');
+	jobs.process('quip_cwl', function(job,done) {
+		console.log(job.data);
+		var workflow = workflows.filter(function(el) {
+			console.log(el);
+			return el.name === job.data.name;
+		});
 		console.log(workflow);
-		var randval = Math.floor(Math.random()*100000);
-		var tmpdir  = './tmpdir'+randval;
-	        fs.mkdirSync(tmpdir);
-		var jobfile = tmpdir + '/workflow-job.json';
-		fs.writeFile(jobfile,JSON.stringify(job.data.workflow), function(err) {
-			if (err) {
-				console.log(err);
-				done(new Error("file error: " + err));
-			}
-		});
-		var cmd = 'cwltool --basedir ' + workflow[0].path + ' --outdir ' + tmpdir;
-		cmd = cmd + ' ' + workflow[0].path + '/' + workflow[0].file;
-		cmd = cmd + ' ' + jobfile;
-		console.log(cmd);
+		if (workflow.length==0) {
+			done(new Error("Unrecognized workflow: " + job.data.name));
+		} else {
+			console.log(workflow);
+			var randval = Math.floor(Math.random()*100000);
+			var tmpdir  = './tmpdir'+randval;
+			fs.mkdirSync(tmpdir);
+			var jobfile = tmpdir + '/workflow-job.json';
+			fs.writeFile(jobfile,JSON.stringify(job.data.workflow), function(err) {
+				if (err) {
+					console.log(err);
+					done(new Error("file error: " + err));
+				}
+			});
+			var cmd = 'cwltool --basedir ' + workflow[0].path + ' --outdir ' + tmpdir;
+			cmd = cmd + ' ' + workflow[0].path + '/' + workflow[0].file;
+			cmd = cmd + ' ' + jobfile;
+			console.log(cmd);
 
-		exec(cmd, function(error,stdout,stderr) {
-			if (error) {
-				console.error(error);
-				done(new Error("Execution error: " + error));
-			}
-			console.log(stdout);
-		        done(null,stdout);
-		});
-	}
-});
+			exec(cmd, function(error,stdout,stderr) {
+				if (error) {
+					console.error(error);
+					done(new Error("Execution error: " + error));
+				}
+				console.log(stdout);
+				done(null,stdout);
+			});
+		}
+	});
 
-jobs.process('wsi_segment', function(job,done) {
-	console.log(job.data);
-        var wsi = job.data.wsi;
+	jobs.process('wsi_segment', function(job,done) {
+		console.log(job.data);
+		var wsi = job.data.wsi;
 
-        // get metadata about image
-        request.get('http://quip-data:9099/services/Camicroscope_DataLoader/DataLoader/query/getMetaDataForCaseID')
+		// get metadata about image
+		request.get('http://quip-data:9099/services/Camicroscope_DataLoader/DataLoader/query/getMetaDataForCaseID')
 		.query('case_id='+wsi.case_id)
 		.end(function(err,res) {
 			console.log('RESULT: ' + JSON.stringify(res));
@@ -96,7 +112,7 @@ jobs.process('wsi_segment', function(job,done) {
 					seg_params.case_id = wsi.case_id;
 					seg_params.image_wsi = wsi.case_id;
 					seg_params.subject_id = wsi.case_id;
-					
+
 					console.log("SEG PARAMS: " + JSON.stringify(seg_params));
 
 
@@ -107,79 +123,78 @@ jobs.process('wsi_segment', function(job,done) {
 					segment_job.data.workflow = seg_params;
 
 					request.post('http://quip-jobs:3000/job')
-						.send(segment_job)
-						.set("Content-Type","application/json")
-						.end(function(err,res) {
-							console.log("RESULT: " + JSON.stringify(res));
-						});
-					
+					.send(segment_job)
+					.set("Content-Type","application/json")
+					.end(function(err,res) {
+						console.log("RESULT: " + JSON.stringify(res));
+					});
+
 				}
 			}
 
 		});
-});
-
-
-
-jobs.process('order', function(job,done) {
-	console.log(job.data);
-	var workflow = workflows.filter(function(el) {
-                console.log(el);
-		return el.name === "segmentation";
 	});
-        console.log(workflow);
-	if (workflow.length==0) {
-		done(new Error("Unrecognized workflow: " + job.data.name));
-	} else {
-                var job_def = {}; 
 
-                job_def.image_wsi = job.data.order.image.case_id;
-                job_def.locx = parseInt(job.data.order.roi.x);
-                job_def.locy = parseInt(job.data.order.roi.y);
-                job_def.width = parseInt(job.data.order.roi.w);
-                job_def.height = parseInt(job.data.order.roi.h);
-                job_def.output_dir = "./";
-                job_def.analysis_id = job.data.order.execution.execution_id;
-		job_def.case_id = job.data.order.image.case_id;
-		job_def.subject_id = job.data.order.image.subject_id;
-                console.log("OTSU " + job.data.order.pr);
-                job_def.otsu_ratio = parseFloat(job.data.order.pr);
-                console.log("CURV " + job.data.order.pw);
-                job_def.curv_weight = parseFloat(job.data.order.pw);
-                job_def.lower_size = parseFloat(job.data.order.pl);
-                job_def.upper_size = parseFloat(job.data.order.pu);
-                job_def.kernel_size = parseFloat(job.data.order.pk);
-                job_def.declump = job.data.order.pj;
-		job_def.mpp = 0.25;
-                job_def.upper_left_corner = job.data.order.roi.x + "," + job.data.order.roi.y;
-                job_def.tile_size = job.data.order.roi.w + "," + job.data.order.roi.h;
-                job_def.patch_size = job_def.tile_size;
-		job_def.zip_output = "output.zip";
-                job_def.out_folder = "./temp";
-
-		var randval = Math.floor(Math.random()*100000);
-		var tmpdir  = './tmpdir'+randval;
-	        fs.mkdirSync(tmpdir);
-		var jobfile = tmpdir + '/workflow-job.json';
-		fs.writeFile(jobfile,JSON.stringify(job_def), function(err) {
-			if (err) {
-				console.log(err);
-				done(new Error("file error: " + err));
-			}
+	jobs.process('order', function(job,done) {
+		console.log(job.data);
+		var workflow = workflows.filter(function(el) {
+			console.log(el);
+			return el.name === "segmentation";
 		});
-		var cmd = 'cwltool --basedir ' + workflow[0].path + ' --outdir ' + tmpdir;
-		cmd = cmd + ' ' + workflow[0].path + '/' + workflow[0].file;
-		cmd = cmd + ' ' + jobfile;
-		console.log(cmd);
+		console.log(workflow);
+		if (workflow.length==0) {
+			done(new Error("Unrecognized workflow: " + job.data.name));
+		} else {
+			var job_def = {}; 
 
-		exec(cmd, function(error,stdout,stderr) {
-			if (error) {
-				console.error(error);
-				done(new Error("Execution error: " + error));
-			}
-			console.log(stdout);
-		        done(null,stdout);
-		});
-	}
-});
+			job_def.image_wsi = job.data.order.image.case_id;
+			job_def.locx = parseInt(job.data.order.roi.x);
+			job_def.locy = parseInt(job.data.order.roi.y);
+			job_def.width = parseInt(job.data.order.roi.w);
+			job_def.height = parseInt(job.data.order.roi.h);
+			job_def.output_dir = "./";
+			job_def.analysis_id = job.data.order.execution.execution_id;
+			job_def.case_id = job.data.order.image.case_id;
+			job_def.subject_id = job.data.order.image.subject_id;
+			console.log("OTSU " + job.data.order.pr);
+			job_def.otsu_ratio = parseFloat(job.data.order.pr);
+			console.log("CURV " + job.data.order.pw);
+			job_def.curv_weight = parseFloat(job.data.order.pw);
+			job_def.lower_size = parseFloat(job.data.order.pl);
+			job_def.upper_size = parseFloat(job.data.order.pu);
+			job_def.kernel_size = parseFloat(job.data.order.pk);
+			job_def.declump = job.data.order.pj;
+			job_def.mpp = 0.25;
+			job_def.upper_left_corner = job.data.order.roi.x + "," + job.data.order.roi.y;
+			job_def.tile_size = job.data.order.roi.w + "," + job.data.order.roi.h;
+			job_def.patch_size = job_def.tile_size;
+			job_def.zip_output = "output.zip";
+			job_def.out_folder = "./temp";
+
+			var randval = Math.floor(Math.random()*100000);
+			var tmpdir  = './tmpdir'+randval;
+			fs.mkdirSync(tmpdir);
+			var jobfile = tmpdir + '/workflow-job.json';
+			fs.writeFile(jobfile,JSON.stringify(job_def), function(err) {
+				if (err) {
+					console.log(err);
+					done(new Error("file error: " + err));
+				}
+			});
+			var cmd = 'cwltool --basedir ' + workflow[0].path + ' --outdir ' + tmpdir;
+			cmd = cmd + ' ' + workflow[0].path + '/' + workflow[0].file;
+			cmd = cmd + ' ' + jobfile;
+			console.log(cmd);
+
+			exec(cmd, function(error,stdout,stderr) {
+				if (error) {
+					console.error(error);
+					done(new Error("Execution error: " + error));
+				}
+				console.log(stdout);
+				done(null,stdout);
+			});
+		}
+	});
+}
 
