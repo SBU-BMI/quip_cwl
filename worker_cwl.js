@@ -31,13 +31,13 @@ setInterval(function() {
 }, timeDelay);
 
 if (cluster.isMaster) {
-	for (var i = 0; i < numCoress; i++) 
+	for (var i = 0; i < numCores; i++) 
 		cluster.fork();
 	cluster.on('exit', function(worker, code, signal) {
-		console.log('worker ${worker.process.pid} died');
+		console.log('worker '+worker.process.pid+' died');
 	});
 } else {
-	console.log('Worker ${process.pid} started');
+	console.log('Worker '+process.pid+' started');
 	jobs.process('quip_cwl', function(job,done) {
 		console.log(job.data);
 		var workflow = workflows.filter(function(el) {
