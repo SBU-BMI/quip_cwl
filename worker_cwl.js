@@ -13,19 +13,13 @@ var redis_host = process.env.REDIS_HOST || config.redis.host;
 var redis_port = process.env.REDIS_PORT || config.redis.port;
 var numCores   = 8 || process.env.NUM_CORES || require('os').cpus().length;
 
-kue.redis.createClient = function() {
-    var client = redis.createClient(redis_port, redis_host);
-    return client;
-}
-var jobs = kue.createQueue(); 
-
-/* var jobs = kue.createQueue({
+var jobs = kue.createQueue({
 	prefix: 'q',
 	redis: {
 		port: redis_port,
 		host: redis_host
 	}
-}); */
+});
 
 if (cluster.isMaster) {
 	for (var i = 0; i < numCores; i++) 
