@@ -11,7 +11,7 @@ var config    = require('./config/config.json');
 
 var redis_host = process.env.REDIS_HOST || config.redis.host;
 var redis_port = process.env.REDIS_PORT || config.redis.port;
-var numCores   = process.env.NUM_CORES || require('os').cpus().length;
+var numCores   = 8 || process.env.NUM_CORES || require('os').cpus().length;
 
 var jobs = kue.createQueue({
 	prefix: 'q',
@@ -19,19 +19,6 @@ var jobs = kue.createQueue({
 		port: redis_port,
 		host: redis_host
 	}
-});
-
-// service may lose connection to redis sub/pub in docker swarm
-// ping redis at intervals to keep connection open
-var redisURL   = "redis://"+redis_host+":"+redis_port;
-var redisCache = redis.createClient(redisURL);
-var timeDelay  = 10*1000;
-setInterval(function() {  
-	redisCache.set('ping', 'pong');
-}, timeDelay);
-
-jobs.on('error', function( err ) {
-  console.log( 'ERROR: ', err );
 });
 
 if (cluster.isMaster) {
@@ -42,6 +29,23 @@ if (cluster.isMaster) {
 	});
 } else {
 	console.log('Worker ',process.pid,' started');
+
+	// service may lose connection to redis sub/pub in docker swarm
+	// ping redis at intervals to keep connection open
+	var redisURL   = "redis://"+redis_host+":"+redis_port;
+	var redisCache = redis.createClient(redisURL);
+	var timeDelay  = 10*1000;
+	setInterval(function() {  
+		console.log('Pinging Redis.');
+		redisCache.set('ping', 'pong');
+	}, timeDelay);
+
+	jobs.on('error', function( err ) {
+  		console.log( 'ERROR: ', err );
+	});
+
+
+
 	jobs.process('quip_cwl', function(job,done) {
 		console.log(job.data);
 		var workflow = workflows.filter(function(el) {
