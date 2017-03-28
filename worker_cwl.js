@@ -5,13 +5,13 @@ var fs        = require('fs');
 var cluster   = require('cluster');
 const exec    = require('child_process').exec; 
 var request   = require('superagent');
+const redis   = require('redis');
 var workflows = require('./config/cwl_workflows.json');
-var config    = require('./config/config.js');
+var config    = require('./config/config.json');
 
 var redis_host = process.env.REDIS_HOST || config.redis.host;
 var redis_port = process.env.REDIS_PORT || config.redis.port;
-
-var numCores = require('os').cpus().length;
+var numCores   = require('os').cpus().length;
 
 var jobs = kue.createQueue({
 	prefix: 'q',
@@ -21,10 +21,18 @@ var jobs = kue.createQueue({
 	}
 });
 
+// service may lose connection to redis sub/pub in docker swarm
+// ping redis at intervals to keep connection open
+var redisURL   = "redis://"+redis_host+":"+redis_port;
+var redisCache = redis.createClient(redisURL);
+var timeDelay  = 10*1000;
+setInterval(function() {  
+	redisCache.set('ping', 'pong');
+}, timeDelay);
+
 if (cluster.isMaster) {
 	for (var i = 0; i < numCoress; i++) 
 		cluster.fork();
-
 	cluster.on('exit', function(worker, code, signal) {
 		console.log('worker ${worker.process.pid} died');
 	});
