@@ -67,6 +67,23 @@ def cwl_task(self,workflow):
 
     return w["name"] 
 
+@celery.task 
+def cwl_list():
+    return cwl_config
+
+@celery.task
+def cwl_info(wkf_name):
+    for wkf in cwl_config:
+      if wkf["name"] == wkf_name:
+         wkf_info = wkf
+    if wkf_info == "":
+       raise KeyError("Name does not match")
+       return "Error"
+    
+    f = file(wkf_info["path"] + "/" + wkf_info["file"],"r")
+    w = yaml.load(f)
+    return w
+
 def check_request(request):
     assert request.method == 'POST'
     assert request.form['workflow']
@@ -89,22 +106,29 @@ def check_status(task):
         }
     return jsonify(response)
 
-@app.route('/workflow/list',methods=['GET'])
-def get_list():
-    return jsonify(cwl_config) 
+@app.route('/workflow/list/<queue_name>',methods=['GET'])
+def get_list(queue_name):
+    task = cwl_list.apply_async((),queue=queue_name)
+    task_result = "" 
+    try:
+       task_result = task.get()
+       response = check_status(task)
+    except Exception:
+       response = check_status(task)
 
-@app.route('/workflow/info/<wkf_name>',methods=['GET'])
-def get_info(wkf_name):
-    for wkf in cwl_config:
-      if wkf["name"] == wkf_name:
-         wkf_info = wkf
-    if wkf_info == "":
-       raise KeyError("Name does not match")
-       return "Error"
-    
-    f = file(wkf_info["path"] + "/" + wkf_info["file"],"r")
-    w = yaml.load(f)
-    return jsonify(w)
+    return jsonify(task_result)
+
+@app.route('/workflow/info/<queue_name>/<wkf_name>',methods=['GET'])
+def get_info(queue_name,wkf_name):
+    task = cwl_info.apply_async(([wkf_name]),queue=queue_name)
+    task_result = "" 
+    try:
+       task_result = task.get()
+       response = check_status(task)
+    except Exception:
+       response = check_status(task)
+
+    return jsonify(task_result)
 
 @app.route('/job/background/<queue_name>', methods=['POST'])
 def async_cwl(queue_name):
