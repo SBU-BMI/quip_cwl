@@ -15,4 +15,8 @@ ADD . /root/server/
 WORKDIR /root/server
 RUN cp bin/* /usr/local/bin/.
 
-CMD ["/root/server/run.sh"]
+ENV PATH=$PATH:/root/server
+
+EXPOSE 5000
+
+CMD ["cwlcombined"]

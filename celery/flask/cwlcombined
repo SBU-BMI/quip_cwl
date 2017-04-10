@@ -1,0 +1,16 @@
+#!/bin/bash 
+
+if [ -z ${QUEUE} ];
+then
+   echo "QUEUE is not set!"
+   exit 1;
+fi
+
+if [ -z ${INSTNAME} ];
+then
+   echo "INSTNAME is not set!"
+   exit 1;
+fi
+
+nohup celery worker -A cwl_flask.celery -Q ${QUEUE} -n ${INSTNAME} --uid 0 --gid 0 --loglevel=info &
+python cwl_flask.py

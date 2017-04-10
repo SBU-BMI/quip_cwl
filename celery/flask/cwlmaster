@@ -1,0 +1,3 @@
+#!/bin/bash 
+
+python cwl_flask.py
