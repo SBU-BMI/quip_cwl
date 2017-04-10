@@ -1,0 +1,63 @@
+{
+    "cwlVersion": "v1.0",
+    "class": "CommandLineTool",
+    "baseCommand": [
+        "runCurlGet.sh"
+    ],
+    "inputs": [
+        {
+            "inputBinding": {
+                "position": 1
+            },
+            "id": "image_wsi",
+            "type": [
+                "string"
+            ]
+        },
+        {
+            "inputBinding": {
+                "position": 2
+            },
+            "id": "locx",
+            "type": [
+                "int"
+            ]
+        },
+        {
+            "inputBinding": {
+                "position": 3
+            },
+            "id": "locy",
+            "type": [
+                "int"
+            ]
+        },
+        {
+            "inputBinding": {
+                "position": 4
+            },
+            "id": "width",
+            "type": [
+                "int"
+            ]
+        },
+        {
+            "inputBinding": {
+                "position": 4
+            },
+            "id": "height",
+            "type": [
+                "int"
+            ]
+        }
+    ],
+    "outputs": [
+        {
+            "id": "output_tile",
+            "type": "File",
+            "outputBinding": {
+                "glob": "image.tif"
+            }
+        }
+    ]
+}
