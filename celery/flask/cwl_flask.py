@@ -2,6 +2,7 @@ import json
 import yaml
 import os
 import sys
+from uuid import uuid1, uuid4
 from random import randint
 from gevent import monkey; monkey.patch_all()
 from gevent import wsgi
@@ -40,8 +41,8 @@ def cwl_task(self,workflow):
        raise KeyError("Name does not match")
        return "Error"
 
-    randval = randint(1,100000)
-    tmpdir  = "./tmpdir"+str(randval)
+    randval = uuid4() 
+    tmpdir  = "./tmp"+str(randval)
     os.mkdir(tmpdir)
     jobfile = tmpdir + '/workflow-job.json'
     f = open(jobfile,"w")
@@ -88,11 +89,24 @@ def check_status(task):
         }
     return jsonify(response)
 
-@app.route('/info',methods=['GET'])
-def get_info():
+@app.route('/workflow/list',methods=['GET'])
+def get_list():
     return jsonify(cwl_config) 
 
-@app.route('/background/<queue_name>', methods=['POST'])
+@app.route('/workflow/info/<wkf_name>',methods=['GET'])
+def get_info(wkf_name):
+    for wkf in cwl_config:
+      if wkf["name"] == wkf_name:
+         wkf_info = wkf
+    if wkf_info == "":
+       raise KeyError("Name does not match")
+       return "Error"
+    
+    f = file(wkf_info["path"] + "/" + wkf_info["file"],"r")
+    w = yaml.load(f)
+    return jsonify(w)
+
+@app.route('/job/background/<queue_name>', methods=['POST'])
 def async_cwl(queue_name):
     check_request(request)
 
@@ -101,7 +115,7 @@ def async_cwl(queue_name):
 
     return jsonify({'task_id' : task.id})
 
-@app.route('/exec/<queue_name>', methods=['POST'])
+@app.route('/job/foreground/<queue_name>', methods=['POST'])
 def exec_cwl(queue_name):
     check_request(request)
 
@@ -115,14 +129,14 @@ def exec_cwl(queue_name):
 
     return response
 
-@app.route('/status/<task_id>', methods=['GET'])
+@app.route('/job/status/<task_id>', methods=['GET'])
 def taskstatus(task_id):
     task = cwl_task.AsyncResult(task_id)
     response = check_status(task)
     return response
 
 if __name__ == '__main__':
-    server = wsgi.WSGIServer(('0.0.0.0', 5000), app)
+    server = wsgi.WSGIServer(('', 5000), app)
     server.serve_forever()
 
 # if __name__ == '__main__':
