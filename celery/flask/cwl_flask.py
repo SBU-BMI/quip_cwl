@@ -2,7 +2,7 @@ import json
 import yaml
 import os
 import sys
-from uuid import uuid1, uuid4
+from uuid   import uuid1, uuid4
 from random import randint
 from gevent import monkey; monkey.patch_all()
 from gevent import wsgi

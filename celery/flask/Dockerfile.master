@@ -1,0 +1,15 @@
+FROM python:2.7.13-slim 
+MAINTAINER Tahsin Kurc
+
+RUN pip install --upgrade pip && \
+    pip install celery flask flower gevent pyyaml 
+
+ADD . /root/server/
+WORKDIR /root/server
+
+ENV PATH=$PATH:/root/server
+
+EXPOSE 5000
+EXPOSE 5555
+
+CMD ["cwlmaster"]
