@@ -1,9 +1,10 @@
-FROM sbubmi/test_segmentation:latest
-MAINTAINER Tahsin Kurc
+FROM mongo:3.2.12 
+MAINTAINER Feiqiao Wang "feiqiao.wang@gmail.com" 
 
-RUN yum -y install python python-devel python-pip && \
-    curl --silent --location https://rpm.nodesource.com/setup_7.x | bash - && \
-    yum -y install nodejs
+RUN apt-get -y update && \
+    apt-get -y install python python-dev python-pip curl git wget && \
+    curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
+    apt-get install -y nodejs
 
 RUN npm install -g forever && \
     pip install cwlref-runner && \
@@ -12,7 +13,7 @@ RUN npm install -g forever && \
 
 WORKDIR /root
 
-RUN git clone -b develop https://github.com/SBU-BMI/quip_cwl.git && \
+RUN git clone -b quip_composite https://github.com/SBU-BMI/quip_cwl.git && \
     cd quip_cwl && \
     npm install
  
