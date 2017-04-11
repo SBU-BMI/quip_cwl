@@ -73,6 +73,7 @@ def cwl_list():
 
 @celery.task
 def cwl_info(wkf_name):
+    wkf_info = ""
     for wkf in cwl_config:
       if wkf["name"] == wkf_name:
          wkf_info = wkf
@@ -106,29 +107,69 @@ def check_status(task):
         }
     return jsonify(response)
 
+def check_queue(queue_name):
+    queue_list = celery.control.inspect().active_queues()
+    if not queue_list:
+       return False;
+    for worker in queue_list:
+        for que in queue_list[worker]:
+            if que["name"] == str(queue_name):
+               return True
+    return False
+
 @app.route('/workflow/list/<queue_name>',methods=['GET'])
 def get_list(queue_name):
+    result = {}
+    if not check_queue(queue_name):
+       result["status"]    = "error"
+       result["queue"]     = str(queue_name)
+       result["message"]   = "Queue does not exist"
+       result["workflows"] = []
+       return jsonify(result)
     task = cwl_list.apply_async((),queue=queue_name)
     task_result = "" 
     try:
-       task_result = task.get()
+       task_result = task.get(timeout=10)
        response = check_status(task)
-    except Exception:
+       result["status"]    = "success"
+       result["queue"]     = str(queue_name)
+       result["message"]   = "Got results" 
+       result["workflows"] = task_result 
+    except Exception as ex:
        response = check_status(task)
+       result["status"]    = "error"
+       result["queue"]     = str(queue_name)
+       result["message"]   = str(ex) 
+       result["workflows"] = [] 
 
-    return jsonify(task_result)
+    return jsonify(result)
 
 @app.route('/workflow/info/<queue_name>/<wkf_name>',methods=['GET'])
 def get_info(queue_name,wkf_name):
+    result = {}
+    if not check_queue(queue_name):
+       result["status"]    = "error"
+       result["queue"]     = str(queue_name)
+       result["message"]   = "Queue does not exist"
+       result["workflows"] = []
+       return jsonify(result)
     task = cwl_info.apply_async(([wkf_name]),queue=queue_name)
     task_result = "" 
     try:
-       task_result = task.get()
+       task_result = task.get(timeout=10)
        response = check_status(task)
-    except Exception:
+       result["status"]    = "success"
+       result["queue"]     = str(queue_name)
+       result["message"]   = "Got results" 
+       result["workflow"] = task_result 
+    except Exception as ex:
        response = check_status(task)
+       result["status"]    = "error"
+       result["queue"]     = str(queue_name)
+       result["message"]   = str(ex) 
+       result["workflow"] = "" 
 
-    return jsonify(task_result)
+    return jsonify(result)
 
 @app.route('/job/background/<queue_name>', methods=['POST'])
 def async_cwl(queue_name):
@@ -141,6 +182,9 @@ def async_cwl(queue_name):
 
 @app.route('/job/foreground/<queue_name>', methods=['POST'])
 def exec_cwl(queue_name):
+    if not check_queue(queue_name):
+       return jsonify("Queue doesn't exist!")
+
     check_request(request)
 
     workflow = request.form['workflow']
