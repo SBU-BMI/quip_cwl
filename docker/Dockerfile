@@ -1,5 +1,5 @@
 FROM mongo:3.2.12 
-MAINTAINER Feiqiao Wang "feiqiao.wang@gmail.com" 
+MAINTAINER Feiqiao Wang "feiqiao.wang@stonybrook.edu" 
 
 RUN apt-get -y update && \
     apt-get -y install python python-dev python-pip curl git wget && \
