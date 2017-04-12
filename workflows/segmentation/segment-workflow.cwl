@@ -4,10 +4,15 @@ inputs:
 - id: user
   type: string
 - id: case_id
-  type: int
+  type: string
+outputs:
+  outputSource: segment_curation/output
+  type: string
 steps:
   segment_curation:
     in:
       user: user
       case_id: case_id      
-   run: segment_curation.yaml
+    out:
+    - output
+    run: segment_curation.yaml
