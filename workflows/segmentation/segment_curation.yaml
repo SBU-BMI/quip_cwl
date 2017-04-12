@@ -2,7 +2,6 @@ cwlVersion: v1.0
 class: CommandLineTool 
 baseCommand: 
 - runSegmentCuration.sh 
-
 inputs: 
    - inputBinding: 
        position: 1 
@@ -13,8 +12,10 @@ inputs:
        position: 2 
      id: case_id 
      type:
-       - string        
+       - string 
 outputs:
-   - id: output 
-     type: string 
+   - id: output_log
+     type: File
+     outputBinding:
+       glob: output.log
 
