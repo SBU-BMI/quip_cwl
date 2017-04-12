@@ -4,10 +4,11 @@ inputs:
 - id: user
   type: string
 - id: case_id
-  type: string
+  type: string  
 outputs:
-  outputSource: segment_curation/output
-  type: stdout
+  response:  
+    outputSource: segment_curation/output
+    type: string  
 steps:
   segment_curation:
     in:
