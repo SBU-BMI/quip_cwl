@@ -13,4 +13,3 @@ inputs:
   id: case_id
   type:
   - string
-
