@@ -15,5 +15,5 @@ inputs:
        - string 
 outputs:
    - id: output 
-     type: string 
+     type: stdout 
 
