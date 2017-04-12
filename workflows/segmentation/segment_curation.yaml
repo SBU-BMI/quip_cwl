@@ -1,0 +1,16 @@
+cwlVersion: v1.0
+class: CommandLineTool
+baseCommand:
+- runSegmentCuration.sh
+inputs:
+- inputBinding:
+    position: 1
+  id: user
+  type:
+  - string
+- inputBinding:
+    position: 2
+  id: case_id
+  type:
+  - string
+
