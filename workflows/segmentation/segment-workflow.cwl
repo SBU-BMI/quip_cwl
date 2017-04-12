@@ -7,7 +7,7 @@ inputs:
   type: string
 outputs:
   outputSource: segment_curation/output
-  type: string
+  type: stdout
 steps:
   segment_curation:
     in:
