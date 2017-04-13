@@ -79,8 +79,3 @@ if(merge_execution_id_records == 0){
 }	
 
 print("-- End of Script -- \n");
-
-exit;
-	
-
-
