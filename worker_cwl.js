@@ -81,7 +81,7 @@ if (cluster.isMaster) {
 				if(stderr){
 				    console.log("STDERRRRRR");
 				    console.log("Error: "+err);
-				    done(new Error("stderr error: " + error));
+				    done(new Error("stderr error: " + err));
 			        }
 				console.log("SUCCESSSS");
 				console.log(stdout);
