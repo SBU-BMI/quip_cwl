@@ -3,24 +3,23 @@
 print("-- script to generate composite dataset for given user and image case_id -- \n");
 
 
-print("-- Run script to generate composite markup dataset -- \n");
-
+//print("-- Run script to generate composite markup dataset -- \n");
 // user
-var user="tigerfan7495";
+//var user="tigerfan7495";
 
 //image variables
-var case_id="Alpha123";
+//var case_id="Alpha123";
 
 //MongoDB database variables
-var host="quip-data"
-var port="27017";
-var dbname="quip";
+//var host="quip-data"
+//var port="27017";
+//var dbname="quip";
 
 
 var annotation_execution_id=user+"_composite_input";
 var polygon_execution_id=user+"_composite_dataset";
 
-db = connect(host+":"+ port+"/"+ dbname);
+//db = connect(host+":"+ port+"/"+ dbname);
 
 db.createCollection("newcollection");
 
