@@ -36,7 +36,7 @@ if (cluster.isMaster) {
 	var redisCache = redis.createClient(redisURL);
 	var timeDelay  = 10*1000;
 	setInterval(function() {  
-		console.log('Pinging Redis.');
+		// console.log('Pinging Redis.');
 		redisCache.set('ping', 'pong');
 	}, timeDelay);
 
@@ -74,9 +74,11 @@ if (cluster.isMaster) {
 
 			exec(cmd, function(error,stdout,stderr) {
 				if (error) {
-					console.error(error);
+					console.log("ERRRORRRRR");
+					console.log(error);
 					done(new Error("Execution error: " + error));
 				}
+				console.log("SUCCESSSS");
 				console.log(stdout);
 				done(null,stdout);
 			});
