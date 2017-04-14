@@ -1,0 +1,24 @@
+version: '2'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: quip-redis
+    network_mode: quip_nw
+  rabbitmq:
+     image: rabbitmq:latest
+     container_name: rabbitmq-server
+     ports: ["5672:5672"]
+     network_mode: quip_nw
+  master:
+     depends_on: [redis,rabbitmq,worker]
+     image: tmkurc/quip_master:latest
+     container_name: quip-master
+     ports: ["5000:5000","5555:5555"]
+     network_mode: quip_nw 
+  worker:
+     depends_on: [redis,rabbitmq]
+     image: tmkurc/quip_worker:latest
+     entrypoint: ["cwlworker","-Q","cwlqueue","--loglevel=info","--autoscale=2,2"]
+     container_name: quip-worker
+     network_mode: quip_nw 

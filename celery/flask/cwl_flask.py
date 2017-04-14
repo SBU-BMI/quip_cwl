@@ -22,6 +22,7 @@ cwl_config = json.load(cwl_file)
 app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = config_data["broker"]
 app.config['CELERY_RESULT_BACKEND'] = config_data["backend"]
+app.config['CELERY_TRACK_STARTED'] = True
 
 celery = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
