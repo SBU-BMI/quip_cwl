@@ -2,17 +2,21 @@ import json
 import yaml
 import os
 import sys
-from uuid   import uuid1, uuid4
-from random import randint
+import subprocess  
+from uuid   import uuid4
 from gevent import monkey; monkey.patch_all()
 from gevent import wsgi
 from flask  import Flask, request, jsonify, send_file
 from celery import Celery
-import subprocess  
 
 # read in the configuration file 
 config_file = file("./config/config.json","r")
 config_data = json.load(config_file)
+
+if os.environ.get("CWL_BROKER_URL"):
+   config_data["broker"] = os.environ.get("CWL_BROKER_URL")
+if os.environ.get("CWL_BACKEND_URL"):
+   config_data["backend"] = os.environ.get("CWL_BACKEND_URL")
 
 # workflow data
 cwl_file   = file("./config/cwl_workflows.json","r")
@@ -24,10 +28,10 @@ app.config['CELERY_BROKER_URL'] = config_data["broker"]
 app.config['CELERY_RESULT_BACKEND'] = config_data["backend"]
 app.config['CELERY_TRACK_STARTED'] = True
 
-celery = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broker=app.config['CELERY_BROKER_URL'])
-celery.conf.update(app.config)
+cwl_worker = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broker=app.config['CELERY_BROKER_URL'])
+cwl_worker.conf.update(app.config)
 
-@celery.task (bind=True)
+@cwl_worker.task (bind=True)
 def cwl_task(self,workflow,local_dir):
     w = json.loads(workflow)
     if "name" not in w:
@@ -89,11 +93,11 @@ def cwl_task(self,workflow,local_dir):
     jout = json.loads(cwl_output)
     return jout 
 
-@celery.task 
+@cwl_worker.task 
 def cwl_list():
     return cwl_config
 
-@celery.task
+@cwl_worker.task
 def cwl_info(wkf_name):
     wkf_info = ""
     for wkf in cwl_config:
@@ -130,7 +134,7 @@ def cwl_check_status(task):
     return response 
 
 def cwl_check_queue(queue_name):
-    queue_list = celery.control.inspect().active_queues()
+    queue_list = cwl_worker.control.inspect().active_queues()
     if not queue_list:
        return False;
     for worker in queue_list:
@@ -223,16 +227,11 @@ def exec_cwl(queue_name):
 def upload_file(queue_name):
     cwl_check_request(request)
 
-    # check if the post request has the file part
     if 'file' not in request.files:
-       print 'No file part'
        return jsonify({'error' : 'No file in the request.'}) 
+    
     file = request.files['file']
-
-    # if user does not select file, browser also
-    # submit a empty part without filename
     if file.filename == '':
-       print 'No selected file'
        return jsonify({'error' : 'No file was selected.'}) 
     
     tmpdir = ""

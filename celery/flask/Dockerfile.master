@@ -8,6 +8,8 @@ ADD . /root/server/
 WORKDIR /root/server
 
 ENV PATH=$PATH:/root/server
+ENV CWL_BROKER_URL="pyamqp://quip-rabbitmq:5672//"
+ENV CWL_BACKEND_URL="redis://quip-redis:6379/0"
 
 EXPOSE 5000
 EXPOSE 5555

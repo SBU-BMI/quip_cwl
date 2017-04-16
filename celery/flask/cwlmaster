@@ -1,4 +1,4 @@
 #!/bin/bash 
 
-nohup flower -A cwl_flask.celery --address=0.0.0.0 --port=5555 &
-python cwl_flask.py
+nohup flower -A quip_cwl.cwl_worker --address=0.0.0.0 --port=5555 &
+python quip_cwl.py
