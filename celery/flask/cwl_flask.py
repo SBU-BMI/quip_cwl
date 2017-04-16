@@ -6,9 +6,9 @@ from uuid   import uuid1, uuid4
 from random import randint
 from gevent import monkey; monkey.patch_all()
 from gevent import wsgi
-from flask  import Flask, request, jsonify
+from flask  import Flask, request, jsonify, send_file
 from celery import Celery
-from subprocess import call, check_call 
+import subprocess  
 
 # read in the configuration file 
 config_file = file("./config/config.json","r")
@@ -52,7 +52,7 @@ def cwl_task(self,workflow,local_dir):
 
        # create output folder in local_dir
        randval = uuid4() 
-       outdir  = local_dir+"/out"+str(randval)
+       outdir  = local_dir+"/out_"+str(randval)
        os.mkdir(outdir)
 
        # write the workflow job in local_dir
@@ -62,7 +62,7 @@ def cwl_task(self,workflow,local_dir):
        f.close()
     else: # no local folder
        randval = uuid4() 
-       outdir  = "./tmp"+str(randval)
+       outdir  = "./out_"+str(randval)
        os.mkdir(outdir)
        jobfile = outdir + '/workflow-job.json'
        f = open(jobfile,"w")
@@ -79,13 +79,15 @@ def cwl_task(self,workflow,local_dir):
     cmd.append(jobfile);
 
     print cmd
+    cwl_output = ""
     try:
-       check_call(cmd)
+       cwl_output = subprocess.check_output(cmd)
     except Exception:
        raise Exception("Command failed")
        return "Error"
-
-    return w["name"] 
+    
+    jout = json.loads(cwl_output)
+    return jout 
 
 @celery.task 
 def cwl_list():
@@ -105,11 +107,11 @@ def cwl_info(wkf_name):
     w = yaml.load(f)
     return w
 
-def check_request(request):
+def cwl_check_request(request):
     assert request.method == 'POST'
     assert request.form['workflow']
 
-def check_status(task):
+def cwl_check_status(task):
     if task.state == "PENDING":
         response = {
             'state': task.state,
@@ -118,16 +120,16 @@ def check_status(task):
     elif task.state != "FAILURE":
         response = {
             'state': task.state,
-            'status': str(task.info), 
+            'status': task.info 
         }
     else:
         response = {
             'state': task.state,
             'error': str(task.info)  # this is the exception raised
         }
-    return jsonify(response)
+    return response 
 
-def check_queue(queue_name):
+def cwl_check_queue(queue_name):
     queue_list = celery.control.inspect().active_queues()
     if not queue_list:
        return False;
@@ -140,7 +142,7 @@ def check_queue(queue_name):
 @app.route('/workflow/list/<queue_name>',methods=['GET'])
 def get_list(queue_name):
     result = {}
-    if not check_queue(queue_name):
+    if not cwl_check_queue(queue_name):
        result["status"]    = "error"
        result["queue"]     = str(queue_name)
        result["message"]   = "Queue does not exist"
@@ -150,13 +152,13 @@ def get_list(queue_name):
     task_result = "" 
     try:
        task_result = task.get(timeout=10)
-       response = check_status(task)
+       response = cwl_check_status(task)
        result["status"]    = "success"
        result["queue"]     = str(queue_name)
        result["message"]   = "Got results" 
        result["workflows"] = task_result 
     except Exception as ex:
-       response = check_status(task)
+       response = cwl_check_status(task)
        result["status"]    = "error"
        result["queue"]     = str(queue_name)
        result["message"]   = str(ex) 
@@ -167,7 +169,7 @@ def get_list(queue_name):
 @app.route('/workflow/info/<queue_name>/<wkf_name>',methods=['GET'])
 def get_info(queue_name,wkf_name):
     result = {}
-    if not check_queue(queue_name):
+    if not cwl_check_queue(queue_name):
        result["status"]    = "error"
        result["queue"]     = str(queue_name)
        result["message"]   = "Queue does not exist"
@@ -177,13 +179,13 @@ def get_info(queue_name,wkf_name):
     task_result = "" 
     try:
        task_result = task.get(timeout=10)
-       response = check_status(task)
+       response = cwl_check_status(task)
        result["status"]    = "success"
        result["queue"]     = str(queue_name)
        result["message"]   = "Got results" 
        result["workflow"] = task_result 
     except Exception as ex:
-       response = check_status(task)
+       response = cwl_check_status(task)
        result["status"]    = "error"
        result["queue"]     = str(queue_name)
        result["message"]   = str(ex) 
@@ -193,7 +195,7 @@ def get_info(queue_name,wkf_name):
 
 @app.route('/job/background/<queue_name>', methods=['POST'])
 def async_cwl(queue_name):
-    check_request(request)
+    cwl_check_request(request)
 
     workflow = request.form['workflow']
     task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
@@ -202,24 +204,24 @@ def async_cwl(queue_name):
 
 @app.route('/job/foreground/<queue_name>', methods=['POST'])
 def exec_cwl(queue_name):
-    if not check_queue(queue_name):
+    if not cwl_check_queue(queue_name):
        return jsonify("Queue doesn't exist!")
 
-    check_request(request)
+    cwl_check_request(request)
 
     workflow = request.form['workflow']
     task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
     try:
        task.get()
-       response = check_status(task)
+       response = cwl_check_status(task)
     except Exception:
-       response = check_status(task)
+       response = cwl_check_status(task)
 
-    return response
+    return jsonify(response)
 
 @app.route('/job/processfile/<queue_name>', methods=['POST'])
 def upload_file(queue_name):
-    check_request(request)
+    cwl_check_request(request)
 
     # check if the post request has the file part
     if 'file' not in request.files:
@@ -237,20 +239,31 @@ def upload_file(queue_name):
     if file:
        filename = file.filename
        randval = uuid4() 
-       tmpdir  = "./tmp"+str(randval)
+       tmpdir  = "./tmp_"+str(randval)
        os.mkdir(tmpdir)
        file.save(os.path.join(tmpdir, filename))
  
     workflow = request.form['workflow']
-    task     = cwl_task.apply_async([workflow,tmpdir),queue=queue_name)
+    task     = cwl_task.apply_async([workflow,tmpdir],queue=queue_name)
 
     return jsonify({'task_id' : task.id})
+
+@app.route('/job/download/<task_id>', methods=['GET'])
+def download_result(task_id):
+    task     = cwl_task.AsyncResult(task_id)
+    response = cwl_check_status(task)
+
+    if response["state"] == "SUCCESS":
+       return send_file(response["status"]["output_file"]["path"])
+    else:
+       return jsonify(response) 
+    
 
 @app.route('/job/status/<task_id>', methods=['GET'])
 def taskstatus(task_id):
     task = cwl_task.AsyncResult(task_id)
-    response = check_status(task)
-    return response
+    response = cwl_check_status(task)
+    return jsonify(response)
 
 if __name__ == '__main__':
     server = wsgi.WSGIServer(('', 5000), app)

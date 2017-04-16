@@ -1,0 +1,1 @@
+curl -X POST -F "file=@input.txt" -F 'workflow={"name" : "test", "workflow" : {"inpfile" : { "class": "File", "path": "input.txt"}, "outfile" : "output.txt"}}' http://localhost:6000/job/processfile/filequeue

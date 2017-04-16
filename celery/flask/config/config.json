@@ -1,4 +1,4 @@
 {
-    "broker"  : "pyamqp://rabbitmq-server:5672//",
-    "backend" : "redis://quip-redis:6379/0" 
+    "broker"  : "pyamqp://localhost:5672//",
+    "backend" : "redis://localhost:6379/0" 
 }
