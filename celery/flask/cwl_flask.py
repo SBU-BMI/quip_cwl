@@ -28,7 +28,7 @@ celery = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broker=ap
 celery.conf.update(app.config)
 
 @celery.task (bind=True)
-def cwl_task(self,workflow):
+def cwl_task(self,workflow,local_dir):
     w = json.loads(workflow)
     if "name" not in w:
        raise KeyError('Name is not in the list')
@@ -42,20 +42,39 @@ def cwl_task(self,workflow):
        raise KeyError("Name does not match")
        return "Error"
 
-    randval = uuid4() 
-    tmpdir  = "./tmp"+str(randval)
-    os.mkdir(tmpdir)
-    jobfile = tmpdir + '/workflow-job.json'
-    f = open(jobfile,"w")
-    f.write(json.dumps(w["workflow"]))
-    f.close()
+    # check if local dir was set
+    outdir  = ""
+    jobfile = "" 
+    if local_dir != "":
+       if (not os.path.isdir(local_dir)):
+          raise KeyError("Local dir does not exist on this machine.")
+          return "Error"
+
+       # create output folder in local_dir
+       randval = uuid4() 
+       outdir  = local_dir+"/out"+str(randval)
+       os.mkdir(outdir)
+
+       # write the workflow job in local_dir
+       jobfile = local_dir + '/workflow-job.json'
+       f = open(jobfile,"w")
+       f.write(json.dumps(w["workflow"]))
+       f.close()
+    else: # no local folder
+       randval = uuid4() 
+       outdir  = "./tmp"+str(randval)
+       os.mkdir(outdir)
+       jobfile = outdir + '/workflow-job.json'
+       f = open(jobfile,"w")
+       f.write(json.dumps(w["workflow"]))
+       f.close()
  
     cmd = []
     cmd.append("cwltool")
     cmd.append("--basedir")
     cmd.append(wkf_info["path"])
     cmd.append("--outdir")
-    cmd.append(tmpdir)
+    cmd.append(outdir)
     cmd.append(wkf_info["path"] + "/" + wkf_info["file"]);
     cmd.append(jobfile);
 
@@ -177,7 +196,7 @@ def async_cwl(queue_name):
     check_request(request)
 
     workflow = request.form['workflow']
-    task = cwl_task.apply_async(([workflow]),queue=queue_name)
+    task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
 
     return jsonify({'task_id' : task.id})
 
@@ -189,7 +208,7 @@ def exec_cwl(queue_name):
     check_request(request)
 
     workflow = request.form['workflow']
-    task = cwl_task.apply_async(([workflow]),queue=queue_name)
+    task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
     try:
        task.get()
        response = check_status(task)
@@ -197,6 +216,35 @@ def exec_cwl(queue_name):
        response = check_status(task)
 
     return response
+
+@app.route('/job/processfile/<queue_name>', methods=['POST'])
+def upload_file(queue_name):
+    check_request(request)
+
+    # check if the post request has the file part
+    if 'file' not in request.files:
+       print 'No file part'
+       return jsonify({'error' : 'No file in the request.'}) 
+    file = request.files['file']
+
+    # if user does not select file, browser also
+    # submit a empty part without filename
+    if file.filename == '':
+       print 'No selected file'
+       return jsonify({'error' : 'No file was selected.'}) 
+    
+    tmpdir = ""
+    if file:
+       filename = file.filename
+       randval = uuid4() 
+       tmpdir  = "./tmp"+str(randval)
+       os.mkdir(tmpdir)
+       file.save(os.path.join(tmpdir, filename))
+ 
+    workflow = request.form['workflow']
+    task     = cwl_task.apply_async([workflow,tmpdir),queue=queue_name)
+
+    return jsonify({'task_id' : task.id})
 
 @app.route('/job/status/<task_id>', methods=['GET'])
 def taskstatus(task_id):
