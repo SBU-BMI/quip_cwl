@@ -68,7 +68,7 @@ def cwl_task(self,workflow,local_dir,remove_tmp):
     # create temp folder for cwltool
     randval = uuid4() 
     tmpdir  = local_dir+"/tmp_"+str(randval)
-    os.mkdir(tmp)
+    os.mkdir(tmpdir)
 
     # write the workflow job in local_dir
     jobfile = local_dir + '/workflow-job.json'
