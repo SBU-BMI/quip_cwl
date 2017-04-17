@@ -3,6 +3,7 @@ import yaml
 import os
 import sys
 import subprocess  
+import shutil
 from uuid   import uuid4
 from gevent import monkey; monkey.patch_all()
 from gevent import wsgi
@@ -32,7 +33,7 @@ cwl_worker = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broke
 cwl_worker.conf.update(app.config)
 
 @cwl_worker.task (bind=True)
-def cwl_task(self,workflow,local_dir):
+def cwl_task(self,workflow,local_dir,remove_tmp):
     w = json.loads(workflow)
     if "name" not in w:
        raise KeyError('Name is not in the list')
@@ -49,34 +50,38 @@ def cwl_task(self,workflow,local_dir):
     # check if local dir was set
     outdir  = ""
     jobfile = "" 
+    tmpdir  = ""
     if local_dir != "":
        if (not os.path.isdir(local_dir)):
           raise KeyError("Local dir does not exist on this machine.")
           return "Error"
+    else:
+       randval    = uuid4() 
+       local_dir  = "tmp_"+str(randval)
+       os.mkdir(local_dir)
 
-       # create output folder in local_dir
-       randval = uuid4() 
-       outdir  = local_dir+"/out_"+str(randval)
-       os.mkdir(outdir)
+    # create output folder in local_dir
+    randval = uuid4() 
+    outdir  = local_dir+"/out_"+str(randval)
+    os.mkdir(outdir)
 
-       # write the workflow job in local_dir
-       jobfile = local_dir + '/workflow-job.json'
-       f = open(jobfile,"w")
-       f.write(json.dumps(w["workflow"]))
-       f.close()
-    else: # no local folder
-       randval = uuid4() 
-       outdir  = "./out_"+str(randval)
-       os.mkdir(outdir)
-       jobfile = outdir + '/workflow-job.json'
-       f = open(jobfile,"w")
-       f.write(json.dumps(w["workflow"]))
-       f.close()
+    # create temp folder for cwltool
+    randval = uuid4() 
+    tmpdir  = local_dir+"/tmp_"+str(randval)
+    os.mkdir(tmp)
+
+    # write the workflow job in local_dir
+    jobfile = local_dir + '/workflow-job.json'
+    f = open(jobfile,"w")
+    f.write(json.dumps(w["workflow"]))
+    f.close()
  
     cmd = []
     cmd.append("cwltool")
     cmd.append("--basedir")
     cmd.append(wkf_info["path"])
+    cmd.append("--tmpdir-prefix")
+    cmd.append(tmpdir)
     cmd.append("--outdir")
     cmd.append(outdir)
     cmd.append(wkf_info["path"] + "/" + wkf_info["file"]);
@@ -89,8 +94,11 @@ def cwl_task(self,workflow,local_dir):
     except Exception:
        raise Exception("Command failed")
        return "Error"
-    
     jout = json.loads(cwl_output)
+
+    if remove_tmp == True:
+       shutil.rmtree(local_dir)
+
     return jout 
 
 @cwl_worker.task 
@@ -202,7 +210,7 @@ def async_cwl(queue_name):
     cwl_check_request(request)
 
     workflow = request.form['workflow']
-    task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
+    task = cwl_task.apply_async(([workflow,"",True]),queue=queue_name)
 
     return jsonify({'task_id' : task.id})
 
@@ -214,7 +222,7 @@ def exec_cwl(queue_name):
     cwl_check_request(request)
 
     workflow = request.form['workflow']
-    task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
+    task = cwl_task.apply_async(([workflow,"",True]),queue=queue_name)
     try:
        task.get()
        response = cwl_check_status(task)
@@ -243,7 +251,7 @@ def upload_file(queue_name):
        file.save(os.path.join(tmpdir, filename))
  
     workflow = request.form['workflow']
-    task     = cwl_task.apply_async([workflow,tmpdir],queue=queue_name)
+    task     = cwl_task.apply_async([workflow,tmpdir,False],queue=queue_name)
 
     return jsonify({'task_id' : task.id})
 
