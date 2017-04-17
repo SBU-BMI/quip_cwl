@@ -68,7 +68,7 @@ def cwl_task(self,workflow,local_dir):
     # create temp folder for cwltool
     randval = uuid4() 
     tmpdir  = local_dir+"/tmp_"+str(randval)
-    os.mkdir(tmp)
+    os.mkdir(tmpdir)
 
     # write the workflow job in local_dir
     jobfile = local_dir + '/workflow-job.json'
@@ -213,6 +213,41 @@ def async_cwl(queue_name):
 
 @app.route('/job', methods=['POST'])
 def async_order():
+
+    job = request.get_json() 
+    wkf_def = {}
+    wkf_def["name"] = "segmentation"
+    job_def = {} 
+    job_def["image_wsi"] = job["data"]["order"]["image"]["case_id"]
+    job_def["locx"] = int(job["data"]["order"]["roi"]["x"])
+    job_def["locy"] = int(job["data"]["order"]["roi"]["y"])
+    job_def["width"] = int(job["data"]["order"]["roi"]["w"])
+    job_def["height"] = int(job["data"]["order"]["roi"]["h"])
+    job_def["output_dir"] = "./"
+    job_def["analysis_id"] = job["data"]["order"]["execution"]["execution_id"] 
+    job_def["case_id"] = job["data"]["order"]["image"]["case_id"]
+    job_def["subject_id"] = job["data"]["order"]["image"]["subject_id"]
+    job_def["otsu_ratio"] = float(job["data"]["order"]["pr"]) 
+    job_def["curv_weight"] = float(job["data"]["order"]["pw"])
+    job_def["lower_size"] = float(job["data"]["order"]["pl"])
+    job_def["upper_size"] = float(job["data"]["order"]["pu"])
+    job_def["kernel_size"] = float(job["data"]["order"]["pk"])
+    job_def["declump"] = job["data"]["order"]["pj"]
+    job_def["mpp"] = float(0.25)
+    job_def["upper_left_corner"] = job["data"]["order"]["roi"]["x"] + "," + job["data"]["order"]["roi"]["y"]
+    job_def["tile_size"] = job["data"]["order"]["roi"]["w"] + "," + job["data"]["order"]["roi"]["h"]
+    job_def["patch_size"] = job_def["tile_size"]
+    job_def["zip_output"] = "output.zip"
+    job_def["out_folder"] = "./temp"
+    wkf_def["workflow"] = job_def
+    queue_name = "cwlqueue"
+    print wkf_def
+    workflow = json.dumps(wkf_def)
+    task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
+    return jsonify({'id' : task.id})
+
+
+
     for item in request.form:
         job = json.loads(item)
         wkf_def = {}
@@ -245,6 +280,35 @@ def async_order():
         workflow = json.dumps(wkf_def)
         task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
         return jsonify({'id' : task.id})
+
+    return jsonify({'id' : 1})
+
+@app.route('/job/<task_id>', methods=['GET'])
+def order_status(task_id):
+    task     = cwl_task.AsyncResult(task_id)
+    response = ""
+    if task.state == "PENDING":
+        response = {
+            'state': 'pending',
+            'status': str(task.info)
+        }
+    elif task.state == "STARTED":
+        response = {
+            'state': 'started',
+            'status': task.info 
+        }
+    elif task.state == "SUCCESS":
+        response = {
+            'state': 'completed',
+            'status': task.info 
+        }
+    else:
+        response = {
+            'state': 'failed',
+            'error': str(task.info)  # this is the exception raised
+        }
+
+    return jsonify(response)
 
 @app.route('/cwl/job/foreground/<queue_name>', methods=['POST'])
 def exec_cwl(queue_name):
@@ -308,7 +372,7 @@ def taskstatus(task_id):
     return jsonify(response)
 
 if __name__ == '__main__':
-    server = wsgi.WSGIServer(('', 6000), app)
+    server = wsgi.WSGIServer(('', 3000), app)
     server.serve_forever()
 
 # if __name__ == '__main__':

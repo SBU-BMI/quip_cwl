@@ -13,13 +13,13 @@ services:
      network_mode: quip_nw
   master:
      depends_on: [redis,rabbitmq,worker]
-     image: tmkurc/quip_master:latest
-     container_name: quip-master
-     ports: ["5000:5000","5555:5555"]
+     image: quip_master:latest
+     container_name: quip-jobs
+     ports: ["5000:3000","5555:5555"]
      network_mode: quip_nw 
   worker:
      depends_on: [redis,rabbitmq]
-     image: tmkurc/quip_worker:latest
+     image: quip_worker:latest
      entrypoint: ["cwlworker","-Q","cwlqueue","--loglevel=info","--autoscale=2,2"]
      container_name: quip-worker
      network_mode: quip_nw 
