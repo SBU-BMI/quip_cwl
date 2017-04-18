@@ -19,7 +19,7 @@ if os.environ.get("CWL_BROKER_URL"):
 if os.environ.get("CWL_BACKEND_URL"):
    config_data["backend"] = os.environ.get("CWL_BACKEND_URL")
 
-server_port = 3000
+server_port = 5000
 if os.environ.get("MASTER_PORT"):
    server_port = int(os.environ.get("MASTER_PORT"))
 
@@ -217,72 +217,6 @@ def async_cwl(queue_name):
 
     return jsonify({'task_id' : task.id})
 
-@app.route('/job', methods=['POST'])
-def async_order():
-
-    job = request.get_json() 
-    if job is None:
-       raise Exception("Content-type should be application/json")
-       return "Error"
-
-    wkf_def = {}
-    wkf_def["name"] = "segmentation"
-    job_def = {} 
-    job_def["image_wsi"] = job["data"]["order"]["image"]["case_id"]
-    job_def["locx"] = int(job["data"]["order"]["roi"]["x"])
-    job_def["locy"] = int(job["data"]["order"]["roi"]["y"])
-    job_def["width"] = int(job["data"]["order"]["roi"]["w"])
-    job_def["height"] = int(job["data"]["order"]["roi"]["h"])
-    job_def["output_dir"] = "./"
-    job_def["analysis_id"] = job["data"]["order"]["execution"]["execution_id"] 
-    job_def["case_id"] = job["data"]["order"]["image"]["case_id"]
-    job_def["subject_id"] = job["data"]["order"]["image"]["subject_id"]
-    job_def["otsu_ratio"] = float(job["data"]["order"]["pr"]) 
-    job_def["curv_weight"] = float(job["data"]["order"]["pw"])
-    job_def["lower_size"] = float(job["data"]["order"]["pl"])
-    job_def["upper_size"] = float(job["data"]["order"]["pu"])
-    job_def["kernel_size"] = float(job["data"]["order"]["pk"])
-    job_def["declump"] = job["data"]["order"]["pj"]
-    job_def["mpp"] = float(0.25)
-    job_def["upper_left_corner"] = job["data"]["order"]["roi"]["x"] + "," + job["data"]["order"]["roi"]["y"]
-    job_def["tile_size"] = job["data"]["order"]["roi"]["w"] + "," + job["data"]["order"]["roi"]["h"]
-    job_def["patch_size"] = job_def["tile_size"]
-    job_def["zip_output"] = "output.zip"
-    job_def["out_folder"] = "./temp"
-    wkf_def["workflow"] = job_def
-    queue_name = "cwlqueue"
-    print wkf_def
-    workflow = json.dumps(wkf_def)
-    task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
-    return jsonify({'id' : task.id})
-
-@app.route('/job/<task_id>', methods=['GET'])
-def order_status(task_id):
-    task     = cwl_task.AsyncResult(task_id)
-    response = ""
-    if task.state == "PENDING":
-        response = {
-            'state': 'pending',
-            'status': str(task.info)
-        }
-    elif task.state == "STARTED":
-        response = {
-            'state': 'started',
-            'status': task.info 
-        }
-    elif task.state == "SUCCESS":
-        response = {
-            'state': 'completed',
-            'status': task.info 
-        }
-    else:
-        response = {
-            'state': 'failed',
-            'error': str(task.info)  # this is the exception raised
-        }
-
-    return jsonify(response)
-
 @app.route('/work/foreground/<queue_name>', methods=['POST'])
 def exec_cwl(queue_name):
     if not cwl_check_queue(queue_name):
@@ -344,8 +278,10 @@ def taskstatus(task_id):
 
 @app.route('/job', methods=['POST'])
 def async_order():
-
     job = request.get_json() 
+    if job is None:
+       raise ClientError("Content-type should be application/json", status_code=400)
+
     wkf_def = {}
     wkf_def["name"] = "segmentation"
     job_def = {} 
@@ -374,45 +310,8 @@ def async_order():
     queue_name = "cwlqueue"
     print wkf_def
     workflow = json.dumps(wkf_def)
-    task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
+    task = cwl_task.apply_async(([workflow,"",False]),queue=queue_name)
     return jsonify({'id' : task.id})
-
-
-
-    for item in request.form:
-        job = json.loads(item)
-        wkf_def = {}
-        wkf_def["name"] = "segmentation"
-        job_def = {} 
-        job_def["image_wsi"] = job["data"]["order"]["image"]["case_id"]
-        job_def["locx"] = int(job["data"]["order"]["roi"]["x"])
-        job_def["locy"] = int(job["data"]["order"]["roi"]["y"])
-        job_def["width"] = int(job["data"]["order"]["roi"]["w"])
-        job_def["height"] = int(job["data"]["order"]["roi"]["h"])
-        job_def["output_dir"] = "./"
-        job_def["analysis_id"] = job["data"]["order"]["execution"]["execution_id"] 
-        job_def["case_id"] = job["data"]["order"]["image"]["case_id"]
-        job_def["subject_id"] = job["data"]["order"]["image"]["subject_id"]
-        job_def["otsu_ratio"] = float(job["data"]["order"]["pr"]) 
-        job_def["curv_weight"] = float(job["data"]["order"]["pw"])
-        job_def["lower_size"] = float(job["data"]["order"]["pl"])
-        job_def["upper_size"] = float(job["data"]["order"]["pu"])
-        job_def["kernel_size"] = float(job["data"]["order"]["pk"])
-        job_def["declump"] = job["data"]["order"]["pj"]
-        job_def["mpp"] = float(0.25)
-        job_def["upper_left_corner"] = job["data"]["order"]["roi"]["x"] + "," + job["data"]["order"]["roi"]["y"]
-        job_def["tile_size"] = job["data"]["order"]["roi"]["w"] + "," + job["data"]["order"]["roi"]["h"]
-        job_def["patch_size"] = job_def["tile_size"]
-        job_def["zip_output"] = "output.zip"
-        job_def["out_folder"] = "./temp"
-        wkf_def["workflow"] = job_def
-        queue_name = "cwlqueue"
-        print wkf_def
-        workflow = json.dumps(wkf_def)
-        task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
-        return jsonify({'id' : task.id})
-
-    return jsonify({'id' : 1})
 
 @app.route('/job/<task_id>', methods=['GET'])
 def order_status(task_id):
@@ -441,8 +340,30 @@ def order_status(task_id):
 
     return jsonify(response)
 
+#
+# return error, from flask documentation
+#
+class ClientError(Exception):
+    status_code = 400
 
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
 
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
+
+@app.errorhandler(ClientError)
+def handle_client_error(error):
+    response = jsonify(error.to_dict())
+    response.state = "ERROR"
+    response.status_code = error.status_code
+    return response
 
 if __name__ == '__main__':
     server = wsgi.WSGIServer(('', server_port), app)
