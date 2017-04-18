@@ -33,7 +33,7 @@ cwl_worker = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broke
 cwl_worker.conf.update(app.config)
 
 @cwl_worker.task (bind=True)
-def cwl_task(self,workflow,local_dir,remove_tmp):
+def cwl_task(self,workflow,work_dir,remove_tmp):
     w = json.loads(workflow)
     if "name" not in w:
        raise KeyError('Name is not in the list')
@@ -51,27 +51,26 @@ def cwl_task(self,workflow,local_dir,remove_tmp):
     outdir  = ""
     jobfile = "" 
     tmpdir  = ""
-    if local_dir != "":
-       if (not os.path.isdir(local_dir)):
+    if work_dir != "":
+       if (not os.path.isdir(work_dir)):
           raise KeyError("Local dir does not exist on this machine.")
           return "Error"
     else:
-       randval    = uuid4() 
-       local_dir  = "tmp_"+str(randval)
-       os.mkdir(local_dir)
+       work_dir  = "tmp_"+str(uuid4())
+       os.mkdir(work_dir)
 
-    # create output folder in local_dir
+    # create output folder in work_dir
     randval = uuid4() 
-    outdir  = local_dir+"/out_"+str(randval)
+    outdir  = work_dir+"/out_"+str(randval)
     os.mkdir(outdir)
 
     # create temp folder for cwltool
     randval = uuid4() 
-    tmpdir  = local_dir+"/tmp_"+str(randval)
+    tmpdir  = work_dir+"/tmp_"+str(randval)
     os.mkdir(tmpdir)
 
-    # write the workflow job in local_dir
-    jobfile = local_dir + '/workflow-job.json'
+    # write the workflow job in work_dir
+    jobfile = work_dir + '/workflow-job.json'
     f = open(jobfile,"w")
     f.write(json.dumps(w["workflow"]))
     f.close()
@@ -97,7 +96,7 @@ def cwl_task(self,workflow,local_dir,remove_tmp):
     jout = json.loads(cwl_output)
 
     if remove_tmp == True:
-       shutil.rmtree(local_dir)
+       shutil.rmtree(work_dir)
 
     return jout 
 
