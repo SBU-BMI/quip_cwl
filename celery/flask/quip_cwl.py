@@ -360,8 +360,9 @@ class ClientError(Exception):
 
 @app.errorhandler(ClientError)
 def handle_client_error(error):
-    response = jsonify(error.to_dict())
-    response.state = "ERROR"
+    res = error.to_dict()
+    res["state"] = "ERROR"
+    response = jsonify(res)
     response.status_code = error.status_code
     return response
 
