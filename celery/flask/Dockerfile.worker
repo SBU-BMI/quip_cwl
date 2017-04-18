@@ -6,7 +6,7 @@ RUN yum -y install python python-devel python-pip && \
     yum -y install nodejs
 
 RUN pip install --upgrade pip && \
-    pip install -U "celery[redis]" flask flower gevent pyyaml cwlref-runner && \
+    pip install -U "celery[redis]" flask flower gevent pyyaml requests cwlref-runner && \
     yum -y install curl wget vim && \
     wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 && \
     chmod 0755 jq-linux64 && mv jq-linux64 /usr/local/bin/. 

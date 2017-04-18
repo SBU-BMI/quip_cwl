@@ -2,7 +2,7 @@ FROM python:2.7.13-slim
 MAINTAINER Tahsin Kurc
 
 RUN pip install --upgrade pip && \
-    pip install -U "celery[redis]" flask flower gevent pyyaml 
+    pip install -U "celery[redis]" flask flower gevent pyyaml requests
 
 ADD . /root/server/
 WORKDIR /root/server
