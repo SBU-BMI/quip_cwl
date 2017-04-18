@@ -329,7 +329,7 @@ def order_status(task_id):
         }
     elif task.state == "SUCCESS":
         response = {
-            'state': 'completed',
+            'state': 'complete',
             'status': task.info 
         }
     else:
