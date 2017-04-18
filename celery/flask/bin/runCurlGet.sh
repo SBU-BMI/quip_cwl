@@ -1,9 +1,26 @@
-#!/bin/bash
+#!/usr/bin/env python
 
-img_loc=`curl -X GET "http://quip-data:9099/services/Camicroscope_DataLoader/DataLoader/query/getFileLocationByIID/?TCGAId=$1" | jq-linux64 -r '.[0]["file-location"]'`;
+import requests
+import json
+import sys
 
-curl -o image.tif -X GET "http://quip-oss:5000/$img_loc/$2,$3,$4,$5/full/0/default.tif"
+img_id = sys.argv[1]
+x      = sys.argv[2]
+y      = sys.argv[3]
+w      = sys.argv[4]
+h      = sys.argv[5]
 
-# /data/images/TCGA-06-0148-01Z-00-DX1.3b19c82d-c52d-4514-8bf6-5b0f629c18de.svs/11287,13719,199,192/full/0/default.jpg
-# echo "CURL" $PWD $@ 
-# echo "CURL" $PWD $@ > image.jpg
+img_loc = "http://quip-data:9099/services/Camicroscope_DataLoader/DataLoader/query/getFileLocationByIID" 
+payload = { "TCGAId" : str(img_id) }
+r = requests.get(img_loc,params=payload)
+img_meta = r.json()
+img_file = str(img_meta[0]["file-location"])
+
+tile_url = "http://quip-oss:5000/"+str(img_meta[0]["file-location"])
+tile_url = tile_url+"/"+x+","+y+","+w+","+h+"/full/0/default.tif"
+fr = requests.get(tile_url,stream=True)
+f = open('image.tif','wb')
+for chunk in fr:
+   f.write(chunk)
+f.close()
+
