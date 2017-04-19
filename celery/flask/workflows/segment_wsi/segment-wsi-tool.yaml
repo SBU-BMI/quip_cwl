@@ -1,0 +1,38 @@
+cwlVersion: v1.0
+outputs: []
+baseCommand:
+- runSegmentWsi.sh
+inputs:
+- inputBinding:
+    position: 1
+  id: case_id
+  type: string
+- inputBinding:
+    position: 2
+  id: analysis_id
+  type: string
+- inputBinding:
+    position: 3
+  id: otsu_ratio
+  type: double
+- inputBinding:
+    position: 4
+  id: curv_weight
+  type: double
+- inputBinding:
+    position: 5
+  id: lower_size
+  type: int
+- inputBinding:
+    position: 6
+  id: upper_size
+  type: int
+- inputBinding:
+    position: 7
+  id: kernel_size
+  type: int
+- inputBinding:
+    position: 8
+  id: declump
+  type: string
+class: CommandLineTool
