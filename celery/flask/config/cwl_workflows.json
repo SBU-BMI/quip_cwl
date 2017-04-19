@@ -5,6 +5,11 @@
    "file" : "segment-workflow.cwl"
 },
 {
+   "name" : "segment_wsi",
+   "path" : "workflows/segment_wsi",
+   "file" : "segment-wsi-tool.yaml"
+},
+{
    "name" : "test",
    "path" : "workflows/test",
    "file" : "cat-tool.yaml"

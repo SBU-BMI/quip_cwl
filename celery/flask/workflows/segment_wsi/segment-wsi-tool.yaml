@@ -35,4 +35,8 @@ inputs:
     position: 8
   id: declump
   type: string
+- inputBinding:
+    position: 9
+  id: tile_size
+  type: int
 class: CommandLineTool

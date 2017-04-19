@@ -28,6 +28,6 @@ services:
        dockerfile: Dockerfile.worker
      depends_on: [redis,rabbitmq]
      image: quip_worker:latest
-     entrypoint: ["cwlworker","-Q","cwlqueue","--loglevel=info","--autoscale=2,2"]
+     entrypoint: ["cwlworker","-Q","cwlqueue","--loglevel=info","-Ofair","--prefetch-multiplier=1","-c","4"]
      container_name: quip-worker
      network_mode: quip_nw 

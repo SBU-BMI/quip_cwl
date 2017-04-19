@@ -213,7 +213,7 @@ def async_cwl(queue_name):
     cwl_check_request(request)
 
     workflow = request.form['workflow']
-    task = cwl_task.apply_async(([workflow,""]),queue=queue_name)
+    task = cwl_task.apply_async(([workflow,"",False]),queue=queue_name)
 
     return jsonify({'task_id' : task.id})
 
@@ -227,7 +227,7 @@ def exec_cwl(queue_name):
     workflow = request.form['workflow']
     local_dir  = ""
     remove_tmp = True
-    task = cwl_task.apply_async(([workflow,local_dir]),queue=queue_name)
+    task = cwl_task.apply_async(([workflow,local_dir,False]),queue=queue_name)
     try:
        task.get()
        response = cwl_check_status(task)
@@ -256,7 +256,7 @@ def upload_file(queue_name):
        file.save(os.path.join(tmpdir, filename))
  
     workflow = request.form['workflow']
-    task     = cwl_task.apply_async([workflow,tmpdir],queue=queue_name)
+    task     = cwl_task.apply_async([workflow,tmpdir,False],queue=queue_name)
 
     return jsonify({'task_id' : task.id})
 
