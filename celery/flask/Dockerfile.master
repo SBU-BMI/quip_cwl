@@ -2,13 +2,13 @@ FROM python:2.7.13-slim
 MAINTAINER Tahsin Kurc
 
 RUN pip install --upgrade pip && \
-    pip install -U "celery[redis]" flask flower gevent pyyaml requests
+    pip install -U "celery[redis]" librabbitmq flask flower gevent pyyaml requests
 
 ADD . /root/server/
 WORKDIR /root/server
 
 ENV PATH=$PATH:/root/server
-ENV CWL_BROKER_URL="pyamqp://quip-rabbitmq:5672//"
+ENV CWL_BROKER_URL="amqp://quip-rabbitmq:5672//"
 ENV CWL_BACKEND_URL="redis://quip-redis:6379/0"
 
 EXPOSE 3000

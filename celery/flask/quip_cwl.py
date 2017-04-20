@@ -32,6 +32,7 @@ app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = config_data["broker"]
 app.config['CELERY_RESULT_BACKEND'] = config_data["backend"]
 app.config['CELERY_TRACK_STARTED'] = True
+# app.config['BROKER_POOL_LIMIT'] = 0
 
 cwl_worker = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broker=app.config['CELERY_BROKER_URL'])
 cwl_worker.conf.update(app.config)
@@ -145,6 +146,11 @@ def cwl_check_status(task):
     return response 
 
 def cwl_check_queue(queue_name):
+    # There is an issue with control.inspect().active_queues()
+    # it returns empty list or None if the system is busy with 
+    # jobs. For now disable check_queue and return True
+    return True   
+
     queue_list = cwl_worker.control.inspect().active_queues()
     if not queue_list:
        return False;
