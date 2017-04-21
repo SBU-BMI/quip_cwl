@@ -16,10 +16,15 @@ WORKDIR /root
 RUN git clone -b quip_composite https://github.com/SBU-BMI/quip_cwl.git && \
     cd quip_cwl && \
     npm install
+    
  
 ENV PATH=$PATH:"/root/quip_cwl/bin"
 ENV PATH=$PATH:"./"
 
 WORKDIR /root/quip_cwl
+
+# change file to executable mod
+RUN cd bin && \
+    chmod 777 runSegmentCuration.sh
 
 CMD ["node","worker_cwl.js"]
