@@ -18,7 +18,10 @@ tile_size   = int(sys.argv[9])
 # get the image metadata
 img_url = "http://quip-data:9099/services/Camicroscope_DataLoader/DataLoader/query/getMetaDataForCaseID"
 payload = { "case_id" : img_id }
-r = requests.get(img_url,params=payload)
+try:
+    r = requests.get(img_url,params=payload, timeout=10)
+except RequestException:
+    sys.exit(1)    
 img_meta = r.json()
 
 img_mpp    = img_meta[0]["mpp-x"]
@@ -26,6 +29,7 @@ img_width  = img_meta[0]["width"]
 img_height = img_meta[0]["height"]
 sub_id     = img_meta[0]["subject_id"]
 
+jobs_url="http://quip-jobs:3000/work/background/cwlqueue"
 for i in range(0,img_width,tile_size):
     for j in range(0,img_height,tile_size):
         wkf_def = {}
@@ -59,10 +63,14 @@ for i in range(0,img_width,tile_size):
         wkf_def["workflow"] = job_def
 
         mydata = [ ('workflow', json.dumps(wkf_def)) ]
-        
-        res = requests.post("http://quip-jobs:3000/work/background/cwlqueue",data=mydata)
+        try:
+            res = requests.post(jobs_url,data=mydata,timeout=10)
+        except RequestException:
+            sys.exit(1)
         
         if res.status_code != requests.codes.ok:
             sys.exit(1)
+
+sys.exit(0)
 
 

@@ -12,15 +12,27 @@ h      = sys.argv[5]
 
 img_loc = "http://quip-data:9099/services/Camicroscope_DataLoader/DataLoader/query/getFileLocationByIID" 
 payload = { "TCGAId" : str(img_id) }
-r = requests.get(img_loc,params=payload)
+
+try:
+    r = requests.get(img_loc,params=payload,timeout=10)
+except RequestException:
+    sys.exit(1)
+
 img_meta = r.json()
 img_file = str(img_meta[0]["file-location"])
 
-tile_url = "http://quip-oss:5000/"+str(img_meta[0]["file-location"])
+tile_url = "http://quip-oss:5000/"+img_file
 tile_url = tile_url+"/"+x+","+y+","+w+","+h+"/full/0/default.tif"
-fr = requests.get(tile_url,stream=True)
+
+try:
+    fr = requests.get(tile_url,stream=True,timeout=20)
+except RequestException:
+    sys.exit(1)
+        
 f = open('image.tif','wb')
 for chunk in fr:
    f.write(chunk)
 f.close()
+
+sys.exit(0)
 

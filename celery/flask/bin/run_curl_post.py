@@ -13,7 +13,10 @@ chck_url = "http://quip-loader:3000/job"
 files   = { 'zip' : open(zip_file,'rb') }
 payload = { 'case_id' : case_id }
 
-r = requests.post(post_url,files=files,data=payload)
+try:
+    r = requests.post(post_url,files=files,data=payload, timeout=30)
+except RequestException:
+    sys.exit(1)
 
 f = open('output.log','w')
 if r.status_code == requests.codes.ok:
@@ -42,5 +45,6 @@ else:
    f.write(json.dumps(rv))
    sys.exit(1)
 f.close()
+
 sys.exit(0)
 
