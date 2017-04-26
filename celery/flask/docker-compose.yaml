@@ -7,9 +7,9 @@ services:
     ports: ["6379:6379"]
     network_mode: quip_nw
   rabbitmq:
-     image: rabbitmq:latest
+     image: rabbitmq:management
      container_name: quip-rabbitmq
-     ports: ["5672:5672"]
+     ports: ["5672:5672","15672:15672"]
      network_mode: quip_nw
   master:
      build:
