@@ -18,10 +18,8 @@ if os.environ.get("CWL_BROKER_URL"):
    config_data["broker"] = os.environ.get("CWL_BROKER_URL")
 if os.environ.get("CWL_BACKEND_URL"):
    config_data["backend"] = os.environ.get("CWL_BACKEND_URL")
-
-server_port = 5000
 if os.environ.get("MASTER_PORT"):
-   server_port = int(os.environ.get("MASTER_PORT"))
+   config_data["server_port"] = int(os.environ.get("MASTER_PORT"))
 
 # workflow data
 cwl_file   = file("./config/cwl_workflows.json","r")
@@ -32,7 +30,6 @@ app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = config_data["broker"]
 app.config['CELERY_RESULT_BACKEND'] = config_data["backend"]
 app.config['CELERY_TRACK_STARTED'] = True
-# app.config['BROKER_POOL_LIMIT'] = 0
 
 cwl_worker = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broker=app.config['CELERY_BROKER_URL'])
 cwl_worker.conf.update(app.config)
@@ -373,6 +370,6 @@ def handle_client_error(error):
     return response
 
 if __name__ == '__main__':
-    server = wsgi.WSGIServer(('', server_port), app)
+    server = wsgi.WSGIServer(('', config_data["server_port"]), app)
     server.serve_forever()
 
