@@ -32,7 +32,7 @@ app.config['CELERY_RESULT_BACKEND'] = config_data["backend"]
 app.config['CELERY_TRACK_STARTED'] = True
 app.config['CELERY_ACKS_LATE'] = True
 app.config['BROKER_HEARTBEAT'] = None
-app.config['CELERY_IGNORE_RESULT'] = True
+# app.config['CELERY_IGNORE_RESULT'] = True
 
 cwl_worker = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broker=app.config['CELERY_BROKER_URL'])
 cwl_worker.conf.update(app.config)
@@ -172,7 +172,7 @@ def get_list(queue_name):
     task = cwl_list.apply_async((),queue=queue_name)
     task_result = "" 
     try:
-       task_result = task.get(timeout=10)
+       task_result = task.get()
        response = cwl_check_status(task)
        result["status"]    = "success"
        result["queue"]     = str(queue_name)
@@ -199,7 +199,7 @@ def get_info(queue_name,wkf_name):
     task = cwl_info.apply_async(([wkf_name]),queue=queue_name)
     task_result = "" 
     try:
-       task_result = task.get(timeout=10)
+       task_result = task.get()
        response = cwl_check_status(task)
        result["status"]    = "success"
        result["queue"]     = str(queue_name)
