@@ -22,7 +22,7 @@ if os.environ.get("MASTER_PORT"):
    config_data["server_port"] = int(os.environ.get("MASTER_PORT"))
 
 # workflow data
-cwl_file   = file("./config/cwl_workflows.json","r")
+cwl_file   = file("./workflows/cwl_workflows.json","r")
 cwl_config = json.load(cwl_file)
 
 # set up the application
@@ -30,9 +30,6 @@ app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = config_data["broker"]
 app.config['CELERY_RESULT_BACKEND'] = config_data["backend"]
 app.config['CELERY_TRACK_STARTED'] = True
-# app.config['CELERY_ACKS_LATE'] = True
-# app.config['BROKER_HEARTBEAT'] = 20.0
-# app.config['CELERY_IGNORE_RESULT'] = True
 
 cwl_worker = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broker=app.config['CELERY_BROKER_URL'])
 cwl_worker.conf.update(app.config)
