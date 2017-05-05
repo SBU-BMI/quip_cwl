@@ -30,8 +30,8 @@ app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = config_data["broker"]
 app.config['CELERY_RESULT_BACKEND'] = config_data["backend"]
 app.config['CELERY_TRACK_STARTED'] = True
-app.config['CELERY_ACKS_LATE'] = True
-app.config['BROKER_HEARTBEAT'] = None
+# app.config['CELERY_ACKS_LATE'] = True
+# app.config['BROKER_HEARTBEAT'] = 20.0
 # app.config['CELERY_IGNORE_RESULT'] = True
 
 cwl_worker = Celery(app.name, backend=app.config['CELERY_RESULT_BACKEND'], broker=app.config['CELERY_BROKER_URL'])
