@@ -19,7 +19,7 @@ tile_size   = int(sys.argv[9])
 img_url = "http://quip-data:9099/services/Camicroscope_DataLoader/DataLoader/query/getMetaDataForCaseID"
 payload = { "case_id" : img_id }
 try:
-    r = requests.get(img_url,params=payload, timeout=10)
+    r = requests.get(img_url,params=payload, timeout=30)
 except RequestException:
     sys.exit(1)    
 img_meta = r.json()
@@ -64,7 +64,7 @@ for i in range(0,img_width,tile_size):
 
         mydata = [ ('workflow', json.dumps(wkf_def)) ]
         try:
-            res = requests.post(jobs_url,data=mydata,timeout=10)
+            res = requests.post(jobs_url,data=mydata,timeout=30)
         except RequestException:
             sys.exit(1)
         

@@ -1,7 +1,7 @@
 cwlVersion: v1.0
 outputs: []
 baseCommand:
-- runSegmentWsi.sh
+- run_segment_wsi.py 
 inputs:
 - inputBinding:
     position: 1
