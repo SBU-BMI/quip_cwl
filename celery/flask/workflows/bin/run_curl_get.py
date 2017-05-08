@@ -14,7 +14,7 @@ img_loc = "http://quip-data:9099/services/Camicroscope_DataLoader/DataLoader/que
 payload = { "TCGAId" : str(img_id) }
 
 try:
-    r = requests.get(img_loc,params=payload,timeout=30)
+    r = requests.get(img_loc,params=payload)
 except RequestException:
     sys.exit(1)
 
@@ -25,7 +25,7 @@ tile_url = "http://quip-oss:5000/"+img_file
 tile_url = tile_url+"/"+x+","+y+","+w+","+h+"/full/0/default.tif"
 
 try:
-    fr = requests.get(tile_url,stream=True,timeout=30)
+    fr = requests.get(tile_url,stream=True)
 except RequestException:
     sys.exit(1)
         
@@ -35,4 +35,3 @@ for chunk in fr:
 f.close()
 
 sys.exit(0)
-

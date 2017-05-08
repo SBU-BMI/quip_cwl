@@ -14,7 +14,7 @@ files   = { 'zip' : open(zip_file,'rb') }
 payload = { 'case_id' : case_id }
 
 try:
-    r = requests.post(post_url,files=files,data=payload, timeout=30)
+    r = requests.post(post_url,files=files,data=payload)
 except RequestException:
     sys.exit(1)
 
