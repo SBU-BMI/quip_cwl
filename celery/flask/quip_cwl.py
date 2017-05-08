@@ -254,7 +254,7 @@ def upload_file(queue_name):
     if file:
        filename = file.filename
        randval = uuid4() 
-       tmpdir  = "./tmp_"+str(randval)
+       tmpdir  = "/data/jobs/tmp_"+str(randval)
        os.mkdir(tmpdir)
        file.save(os.path.join(tmpdir, filename))
  
