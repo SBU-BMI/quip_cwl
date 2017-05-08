@@ -7,7 +7,7 @@ RUN pip install --upgrade pip && \
 ADD . /root/server/
 WORKDIR /root/server
 RUN cp bin/* /usr/local/bin/. && \
-    cp workflows/bin/* /usr/local/bin/.
+    cp -r workflows/bin/* /usr/local/bin/.
 
 ENV PATH=$PATH:/root/server/bin
 # ENV CWL_BROKER_URL="amqp://quip-rabbitmq:5672//"
