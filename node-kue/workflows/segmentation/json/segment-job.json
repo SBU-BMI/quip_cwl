@@ -1,16 +1,4 @@
 {
-    "image_wsi" : "TCGA-06-0148-01Z-00-DX1.3b19c82d-c52d-4514-8bf6-5b0f629c18de.svs",
-    "locx" : 11287,
-    "locy" : 13719,
-    "width" : 199,
-    "height" : 192,
-    "output_dir" : "./",
-    "analysis_id" : "seg:r1.0:w0.8:l3:u10:k20:jN",
-    "case_id" : "test1",
-    "subject_id" : "test1",
-    "upper_left_corner" : "11287,13719",
-    "tile_size" : "199,192",
-    "patch_size" : "199,192",
-    "zip_output" : "output.zip",
-    "out_folder" : "./temp"
+    "user" : "tigerfan7495",
+    "case_id" : "Alpha123"
 }
