@@ -11,17 +11,14 @@ RUN npm install -g forever && \
     wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 && \
     chmod 0755 jq-linux64 && mv jq-linux64 /usr/local/bin/. 
 
-WORKDIR /root
+RUN mkdir -p /root/quip_cwl
+WORKDIR /root/quip_cwl
 
-RUN git clone -b quip_composite https://github.com/SBU-BMI/quip_cwl.git && \
-    cd quip_cwl && \
-    npm install
-    
+ADD . /root/quip_cwl/
+RUN npm install
  
 ENV PATH=$PATH:"/root/quip_cwl/bin"
 ENV PATH=$PATH:"./"
-
-WORKDIR /root/quip_cwl
 
 # change file to executable mod
 RUN cd bin && \
