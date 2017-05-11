@@ -93,9 +93,12 @@ def cwl_task(self,workflow,work_dir,remove_tmp):
     cwl_error  = ""
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     cwl_output, cwl_error = p.communicate()
+    print cwl_error
+    print cwl_output
     if p.returncode != 0:
        err_out = "Command failed. Code: " + str(p.returncode) + " Msg: " + str(cwl_error)
        raise Exception(err_out)
+       return "Error"
 
     jout = json.loads(cwl_output)
 
@@ -218,7 +221,7 @@ def async_cwl(queue_name):
     cwl_check_request(request)
 
     workflow = request.form['workflow']
-    task = cwl_task.apply_async(([workflow,"",False]),queue=queue_name)
+    task = cwl_task.apply_async(([workflow,"",True]),queue=queue_name)
 
     return jsonify({'task_id' : task.id})
 
@@ -232,7 +235,7 @@ def exec_cwl(queue_name):
     workflow = request.form['workflow']
     local_dir  = ""
     remove_tmp = True
-    task = cwl_task.apply_async(([workflow,local_dir,False]),queue=queue_name)
+    task = cwl_task.apply_async(([workflow,local_dir,True]),queue=queue_name)
     try:
        task.get()
        response = cwl_check_status(task)
