@@ -1,4 +1,4 @@
-FROM sbubmi/test_segmentation:latest
+FROM tmkurc/pathomics_analysis:latest
 MAINTAINER Tahsin Kurc
 
 RUN yum -y install python python-devel python-pip && \

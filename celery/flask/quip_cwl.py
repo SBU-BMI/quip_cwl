@@ -90,11 +90,13 @@ def cwl_task(self,workflow,work_dir,remove_tmp):
 
     print cmd
     cwl_output = ""
-    try:
-       cwl_output = subprocess.check_output(cmd)
-    except Exception:
-       raise Exception("Command failed")
-       return "Error"
+    cwl_error  = ""
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    cwl_output, cwl_error = p.communicate()
+    if p.returncode != 0:
+       err_out = "Command failed. Code: " + str(p.returncode) + " Msg: " + str(cwl_error)
+       raise Exception(err_out)
+
     jout = json.loads(cwl_output)
 
     if remove_tmp == True:
