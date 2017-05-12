@@ -15,7 +15,7 @@ payload = { 'case_id' : case_id }
 
 try:
     r = requests.post(post_url,files=files,data=payload)
-except RequestException:
+except requests.exceptions.RequestException:
     sys.exit(1)
 
 f = open('output.log','w')

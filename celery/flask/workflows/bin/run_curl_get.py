@@ -15,7 +15,7 @@ payload = { "TCGAId" : str(img_id) }
 
 try:
     r = requests.get(img_loc,params=payload)
-except RequestException:
+except requests.exceptions.RequestException:
     sys.exit(1)
 
 img_meta = r.json()
@@ -26,7 +26,7 @@ tile_url = tile_url+"/"+x+","+y+","+w+","+h+"/full/0/default.tif"
 
 try:
     fr = requests.get(tile_url,stream=True)
-except RequestException:
+except requests.exceptions.RequestException:
     sys.exit(1)
         
 f = open('image.tif','wb')
