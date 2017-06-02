@@ -63,7 +63,7 @@ var composite_dataset_record_count=db.objects.find({"provenance.image.case_id":c
                          "provenance.analysis.execution_id":polygon_execution_id 			                                                    
                        } ).count();
 
-print("-- composite_dataset_record_count is " + composite_dataset_record_count +" .\n");
+print("-- composite_dataset_record_count is " + composite_dataset_record_count +" \n");
 
 //insert new metadate document of merging dataset to the metadata collection 
 var merge_execution_id_records= db.metadata.find({"image.case_id":case_id,"provenance.analysis_execution_id":polygon_execution_id}).count();
