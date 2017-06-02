@@ -59,6 +59,11 @@ print("-- insert new dataset from newcollection as array:");
  //insert from newcollection as array
  db.objects.insert( db.newcollection.find({ },{"_id":0}).toArray() ); 
 
+var composite_record_count=db.objects.find({"provenance.image.case_id":case_id,                        
+                         "provenance.analysis.execution_id":polygon_execution_id 			                                                    
+                       } ).count();
+
+print("-- composite_record_count is " + composite_record_count +" .\n");
 
 //insert new metadate document of merging dataset to the metadata collection 
 var merge_execution_id_records= db.metadata.find({"image.case_id":case_id,"provenance.analysis_execution_id":polygon_execution_id}).count();
