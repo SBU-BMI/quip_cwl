@@ -2,13 +2,14 @@
 
 print("-- script to generate composite dataset for given user and image case_id -- \n");
 
+var newcollection= Math.random().toString(16).substr(2,16)+"_collection";
+var tmpcollection= Math.random().toString(16).substr(2,15)+"_collection";
+
 var annotation_execution_id=user+"_composite_input";
 var polygon_execution_id=user+"_composite_dataset";
 
-db.createCollection("newcollection");
- //empty the newcollection
-db.newcollection.remove({});
-
+db.createCollection(newcollection);
+ 
 print("-- get segmentations within annotation ... \n");
 //get segmentations within annotation 
 db.objects.find({"provenance.image.case_id":case_id,                
@@ -18,17 +19,17 @@ db.objects.find({"provenance.image.case_id":case_id,
                                                       "provenance.analysis.execution_id":annotation.algorithm,                                                      
                                                        x : { '$gte':annotation.geometry.coordinates[0][0][0], '$lte':annotation.geometry.coordinates[0][2][0]},
                                                        y : { '$gte':annotation.geometry.coordinates[0][0][1], '$lte':annotation.geometry.coordinates[0][2][1]}                       
-                                                      } }, { $out: "tmpCollection" } ]);  
-                    db.tmpCollection.copyTo("newcollection");                                                       
+                                                      } }, { $out: tmpCollection } ]);  
+                    db[tmpCollection].copyTo(newcollection);                                                       
                    } ); 				   
  
-db.newcollection.find().count();
- 
-db.tmpCollection.drop();
+print("composite dataset count: "+db[newcollection].find().count());
+ // drop tem collection
+db[tmpCollection].drop();
   
 print("-- update execution_id for this new collection:");   
 // update execution_id for this new collection
-db.newcollection.update({},
+db[newcollection].update({},
                         {$set : {"provenance.analysis.execution_id":polygon_execution_id}},
                         {upsert:false, multi:true});
                         
@@ -41,9 +42,10 @@ print("-- delete all old composite dataset of segmentations:");
 
 print("-- insert new dataset from newcollection as array:");  
  //insert from newcollection as array
- db.objects.insert( db.newcollection.find({ },{"_id":0}).toArray() ); 
+ db.objects.insert( db[newcollection].find({ },{"_id":0}).toArray() ); 
 
-db.newcollection.drop();
+// drop newcollection
+db[newcollection].drop();
 
 //insert new metadate document of merging dataset to the metadata collection 
 var merge_execution_id_records= db.metadata.find({"image.case_id":case_id,"provenance.analysis_execution_id":polygon_execution_id}).count();
