@@ -13,5 +13,10 @@
    "name" : "test",
    "path" : "workflows/test",
    "file" : "cat-tool.yaml"
+},
+{
+   "name" : "paramopt",
+   "path" : "workflows/paramopt",
+   "file" : "paramopt.yaml"
 }
 ]
