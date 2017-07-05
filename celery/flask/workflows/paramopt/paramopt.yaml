@@ -14,4 +14,4 @@ outputs:
   - id: output_file
     type: File
     outputBinding:
-      glob: $(inputs.outfile)
+      glob: $(inputs.outfile).json
