@@ -4,6 +4,9 @@ MAINTAINER Tahsin Kurc
 RUN pip install --upgrade pip && \
     pip install -U "celery[redis]" librabbitmq flask flower gevent pyyaml requests
 
+RUN apt-get update
+RUN apt-get install net-tools
+
 ADD . /root/server/
 WORKDIR /root/server
 RUN mkdir -p /data/jobs && \

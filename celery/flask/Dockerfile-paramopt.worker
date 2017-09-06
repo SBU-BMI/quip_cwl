@@ -1,7 +1,7 @@
 FROM sbubmi/rtyi:1.0
 MAINTAINER Tahsin Kurc
 
-RUN apt-get -y install python python-dev python-pip
+RUN apt-get -y install python python-dev python-pip unzip
 RUN curl --silent --location https://deb.nodesource.com/setup_6.x | bash -
 RUN apt-get -y install nodejs
 
@@ -16,6 +16,10 @@ WORKDIR /root/server
 RUN mkdir -p /data/jobs && \
     cp bin/* /usr/local/bin/. && \
     cp -r workflows/bin/* /usr/local/bin/.
+
+RUN chmod 755 /home/region-templates/build/regiontemplates/examples/Tuning-Yi/run.sh
+RUN ln -s /home/region-templates/build/regiontemplates/examples/Tuning-Yi/Tuning-Yi /usr/local/bin/Tuning-Yi
+RUN sed -i 's/.\/Tuning-Yi/Tuning-Yi/g' /home/region-templates/build/regiontemplates/examples/Tuning-Yi/run.sh
 
 ENV PATH=$PATH:/root/server/bin
 # ENV CWL_BROKER_URL="amqp://quip-rabbitmq:5672//"
