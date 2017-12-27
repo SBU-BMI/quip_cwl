@@ -7,7 +7,9 @@ RUN apt-get -y update && \
     apt-get install -y nodejs
 
 RUN npm install -g forever && \
+	pip install --upgrade pip && \
     pip install --upgrade setuptools && \
+	pip install avro==1.8.1 && \
     pip install cwlref-runner && \
     wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 && \
     chmod 0755 jq-linux64 && mv jq-linux64 /usr/local/bin/. 
