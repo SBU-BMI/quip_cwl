@@ -1,6 +1,6 @@
 [
 {
-	"name" : "segmentation",
+	"name" : "segment_curation",
 	"path" : "workflows/segmentation",
 	"file" : "segment-workflow.cwl"
 }

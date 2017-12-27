@@ -1,0 +1,3 @@
+#!/bin/bash 
+
+celery worker -A quip_cwl.cwl_worker --loglevel=info "$@"

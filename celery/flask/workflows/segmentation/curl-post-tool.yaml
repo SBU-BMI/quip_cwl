@@ -1,7 +1,7 @@
 cwlVersion: v1.0
 class: CommandLineTool
 baseCommand:
-- runCurlPost.sh
+- run_curl_post.py 
 inputs:
 - inputBinding:
     position: 2

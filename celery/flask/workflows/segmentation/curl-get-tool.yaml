@@ -1,7 +1,7 @@
 cwlVersion: v1.0
 class: CommandLineTool
 baseCommand:
-- runCurlGet.sh
+- run_curl_get.py 
 inputs:
 - inputBinding:
     position: 1
@@ -24,7 +24,7 @@ inputs:
   type:
   - int
 - inputBinding:
-    position: 4
+    position: 5
   id: height
   type:
   - int

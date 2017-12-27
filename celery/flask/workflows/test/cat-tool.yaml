@@ -1,0 +1,17 @@
+cwlVersion: v1.0
+class: CommandLineTool
+baseCommand: runCat.sh 
+inputs:
+  - id: inpfile
+    type: File
+    inputBinding:
+      position: 1
+  - id: outfile
+    type: string
+    inputBinding:
+      position: 2
+outputs: 
+  - id: output_file
+    type: File
+    outputBinding:
+      glob: $(inputs.outfile)

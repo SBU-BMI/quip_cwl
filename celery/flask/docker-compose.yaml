@@ -1,0 +1,33 @@
+version: '2'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: quip-redis
+    ports: ["6379:6379"]
+    network_mode: quip_nw
+  rabbitmq:
+     image: rabbitmq:management
+     container_name: quip-rabbitmq
+     ports: ["5672:5672","15672:15672"]
+     network_mode: quip_nw
+  master:
+     build:
+       context: .
+       dockerfile: Dockerfile.master
+     depends_on: [redis,rabbitmq,worker]
+     image: quip_master:latest
+     environment:
+       - MASTER_PORT=3000
+     container_name: quip-jobs
+     ports: ["5000:3000","5555:5555"]
+     network_mode: quip_nw 
+  worker:
+     build:
+       context: .
+       dockerfile: Dockerfile.worker
+     depends_on: [redis,rabbitmq]
+     image: quip_worker:latest
+     entrypoint: ["cwlworker","-Q","cwlqueue","--loglevel=info","-Ofair","--prefetch-multiplier=1","-c","4"]
+     container_name: quip-worker
+     network_mode: quip_nw 
