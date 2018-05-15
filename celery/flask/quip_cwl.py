@@ -79,6 +79,7 @@ def cwl_task(self,workflow,work_dir,remove_tmp):
  
     cmd = []
     cmd.append("cwltool")
+    cmd.append("--preserve-entire-environment")
     cmd.append("--basedir")
     cmd.append(wkf_info["path"])
     cmd.append("--tmpdir-prefix")
