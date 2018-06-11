@@ -3,7 +3,8 @@ MAINTAINER Feiqiao Wang "feiqiao.wang@stonybrook.edu"
 
 RUN apt-get -y update && \
     apt-get -y install python python-dev python-pip curl git wget && \
-    curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
+    #curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
+    curl -sL https://deb.nodesource.com/setup_8.x | bash - && \
     apt-get install -y nodejs
 
 RUN npm install -g forever && \
