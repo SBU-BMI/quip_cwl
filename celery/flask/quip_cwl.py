@@ -5,8 +5,6 @@ import sys
 import subprocess  
 import shutil
 from uuid   import uuid4
-from gevent import monkey; monkey.patch_all()
-from gevent import wsgi
 from flask  import Flask, request, jsonify, send_file
 from celery import Celery
 
@@ -374,8 +372,4 @@ def handle_client_error(error):
     response = jsonify(res)
     response.status_code = error.status_code
     return response
-
-if __name__ == '__main__':
-    server = wsgi.WSGIServer(('', config_data["server_port"]), app)
-    server.serve_forever()
 

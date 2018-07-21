@@ -1,12 +1,10 @@
 FROM tmkurc/pathomics_analysis:latest
 MAINTAINER Tahsin Kurc
 
-RUN yum -y install python python-devel python-pip && \
-    curl --silent --location https://rpm.nodesource.com/setup_7.x | bash - && \
-    yum -y install nodejs
+RUN yum -y install python python-devel python-pip 
 
 RUN pip install --upgrade pip && \
-    pip install -U "celery[redis]" librabbitmq flask flower gevent pyyaml requests cwlref-runner && \
+    pip install "celery[redis]" librabbitmq flask flower pyyaml requests cwlref-runner gunicorn && \
     yum -y install curl wget vim && \
     wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 && \
     chmod 0755 jq-linux64 && mv jq-linux64 /usr/local/bin/. 
@@ -18,8 +16,8 @@ RUN mkdir -p /data/jobs && \
     cp -r workflows/bin/* /usr/local/bin/.
 
 ENV PATH=$PATH:/root/server/bin
-# ENV CWL_BROKER_URL="amqp://quip-rabbitmq:5672//"
 ENV CWL_BROKER_URL="redis://quip-redis:6379/0"
 ENV CWL_BACKEND_URL="redis://quip-redis:6379/0"
+ENV MASTER_PORT=3000
 
 ENTRYPOINT ["cwlworker"]

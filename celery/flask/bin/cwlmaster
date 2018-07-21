@@ -1,4 +1,4 @@
 #!/bin/bash 
 
 nohup flower -A quip_cwl.cwl_worker --address=0.0.0.0 --port=5555 &
-python quip_cwl.py > output.log 
+gunicorn -b 0.0.0.0:$MASTER_PORT quip_cwl:app > output.log
